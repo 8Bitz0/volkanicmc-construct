@@ -1,0 +1,11 @@
+mod jdk;
+
+pub use jdk::{Jdk, JdkArchitectures, JdkConfig, JdkPlatforms, JdkVersions};
+
+const JDK_FILE: &str = include_str!("jdk.yml");
+
+#[derive(Debug, thiserror::Error)]
+pub enum ResourceLoadError {
+    #[error("Failed to parse YAML: {0}")]
+    YamlParseError(serde_yaml::Error),
+}

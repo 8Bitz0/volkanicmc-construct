@@ -1,0 +1,74 @@
+- '8':
+    linux:
+        amd64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-linux-x64.tar.gz
+            sha256: ffabf152c42d091ff16c920f0c4e267a4f13598bdbda2b32dd78a24054d97c0d
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-linux-aarch64.tar.gz
+            sha256: 25f2bf6103c97cc44371d888b649449178baeaa4033d1867a3d12bc328e96cd4
+            format: tar.gz
+    alpine:
+        amd64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-alpine-linux-x64.tar.gz
+            sha256: eed89e435c9b3cd8971dc845e5633bd5087c17faa84c98250a9eb84dba93bcb9
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-alpine-linux-aarch64.tar.gz
+            sha256: dba985b1304ef08cb3c60c6baeb536665a32d6f99fe5c7bb7a0319d7035388c6
+            format: tar.gz
+    mac:
+        amd64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-macosx-x64.tar.gz
+            sha256: 2ea69e415912f7ad5358d016b1a82068e36c2a625d8573cd28c1c2a9a5b39cba
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-macosx-aarch64.tar.gz
+            sha256: eb1aedaad5505605f17a81692f9882edbcb69f34494330dd5cd2a31f65bbd0e0
+            format: tar.gz
+    windows:
+        amd64:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-windows-x64-jdk.zip
+            sha256: c771169e909459d6f6c3cf68e3a4200af420ae3313cf27423395eb3c0e811016
+            format: zip
+        x86:
+            url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-windows-x86-jdk.zip
+            sha256: 47b9fa69716dcc651b538428d1ed60c6a7683164a6b4c23687c7af960e2f876b
+            format: zip
+- '17':
+    linux:
+        amd64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-linux-x64.tar.gz
+            sha256: 0cf11d8e41d7b28a3dbb95cbdd90c398c310a9ea870e5a06dac65a004612aa62
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-linux-aarch64.tar.gz
+            sha256: 8141bc6ea84ce103a040128040c2f527418a6aa3849353dcfa3cf77488524499
+            format: tar.gz
+    alpine:
+        amd64:
+            url: hhttps://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-alpine-linux-x64.tar.gz
+            sha256: b15a30f232c3632c1482b0bed6cfba79e60dcd79d4617ca350cab326a8c4733d
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-alpine-linux-aarch64.tar.gz
+            sha256: a5a3affeb70f8f0ddf1fe2cdc68eab20550a9cbdb29595150def8313511369a1
+            format: tar.gz
+    mac:
+        amd64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-macosx-x64.tar.gz
+            sha256: 7eed832eb25b6bb9fed5172a02931804ed0bf65dc86a2ddc751aa7648bb35c43
+            format: tar.gz
+        arm64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-macosx-aarch64.tar.gz
+            sha256: 8a0c542e78e47cb5de1db40763692d55b977f1d0b31c5f0ebf2dd426fa33a2f4
+            format: tar.gz
+    windows:
+        amd64:
+            url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-windows-x64-jdk.zip
+            sha256: c771169e909459d6f6c3cf68e3a4200af420ae3313cf27423395eb3c0e811016
+            format: zip
+        x86:
+            url: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9.1/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.9_9.zip
+            sha256: 60bdf71915b17250438a064fce66f4d4de22b50f3d00d16eac8da9efd8443461
+            format: zip
