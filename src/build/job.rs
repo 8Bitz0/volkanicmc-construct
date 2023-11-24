@@ -9,7 +9,9 @@ use crate::resources::{Jdk, JdkConfig};
 use crate::template;
 use crate::vkstore;
 
+use super::lock;
 use super::misc;
+use super::prepare_jdk;
 
 #[derive(Debug, thiserror::Error)]
 pub enum JobError {
@@ -21,6 +23,10 @@ pub enum JobError {
     Base64Error(base64::DecodeError),
     #[error("Download error: {0}")]
     DownloadError(misc::DownloadError),
+    #[error("Prepare JDK error: {0}")]
+    PrepareJdkError(prepare_jdk::PrepareJdkError),
+    #[error("Lock error: {0}")]
+    LockError(lock::LockError),
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -56,12 +62,23 @@ impl JobAction {
                     error!("Failed to decode base64: {}", err);
                     JobError::Base64Error(err)
                 })?;
+
+                fs::write(store.build_path.join(path), contents).await.map_err(JobError::FilesystemError)?;
             }
             JobAction::WriteFileRemote { path, url, sha512 } => {
-                misc::download(store.clone(), url, path.to_path_buf()).map_err(JobError::DownloadError).await?;
+                let p = misc::download(store.clone(), url, match sha512 {
+                    Some(sha512) => misc::Verification::Sha512(sha512.to_string()),
+                    None => misc::Verification::None,
+                }, path.to_path_buf()).map_err(JobError::DownloadError).await?;
+
+                fs::copy(p, store.build_path.join(path)).await.map_err(JobError::FilesystemError)?;
             }
-            JobAction::CopyFile { orig_path, dest_path } => todo!(),
-            JobAction::PrepareJdk { jdk } => todo!(),
+            JobAction::CopyFile { orig_path, dest_path } => {
+                fs::copy(orig_path, store.build_path.join(dest_path)).await.map_err(JobError::FilesystemError)?;
+            }
+            JobAction::PrepareJdk { jdk } => {
+                prepare_jdk::prepare_jdk(store.clone(), jdk.clone()).await.map_err(JobError::PrepareJdkError)?;
+            },
         }
 
         Ok(())
@@ -123,4 +140,23 @@ pub async fn create_jobs(template: &crate::template::Template, jdk_config: JdkCo
     }
 
     Ok(jobs)
+}
+
+pub async fn execute_jobs(store: vkstore::VolkanicStore, lock: &mut lock::Lock) -> Result<(), JobError> {
+    let mut to_skip = lock.job_progress;
+
+    for job in &lock.jobs {
+        if to_skip > 0 {
+            to_skip -= 1;
+            continue;
+        }
+
+        job.action.execute(&store).await?;
+
+        lock.job_progress += 1;
+        
+        lock.update().await.map_err(JobError::LockError)?;
+    }
+
+    Ok(())
 }

@@ -15,7 +15,11 @@ struct Args {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    Build { path: String },
+    Build {
+        path: String,
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
     Check { path: String },
     Create,
 }
@@ -27,7 +31,7 @@ async fn main() {
     let args = Args::parse();
 
     match args.command {
-        Command::Build { path } => {
+        Command::Build { path, force } => {
             let template = match template::Template::import(path::PathBuf::from(path))
                 .await {
                     Ok(template) => template,
@@ -36,7 +40,7 @@ async fn main() {
                         std::process::exit(1);
                     }
             };
-            info!("Template \"{}\" parsed correctly.", template.name);
+            info!("Template \"{}\" parsed correctly", template.name);
 
             let store = match vkstore::VolkanicStore::init().await {
                 Ok(store) => store,
@@ -46,7 +50,7 @@ async fn main() {
                 }
             };
 
-            match build::build(template, store).await {
+            match build::build(template, store, force).await {
                 Ok(()) => {},
                 Err(e) => {
                     error!("Failed to build template: {}", e);
@@ -63,7 +67,7 @@ async fn main() {
                         std::process::exit(1);
                     }
             };
-            info!("Template \"{}\" parsed correctly.", template.name);
+            info!("Template \"{}\" parsed correctly", template.name);
         },
         Command::Create => {
             println!("{}", match serde_jsonc::to_string_pretty(&template::Template::default()) {

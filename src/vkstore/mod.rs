@@ -6,6 +6,8 @@ const VKSTORE_PATH: &str = ".volkanic/";
 
 const VKSTORE_BUILD_SUFFIX: &str = "build/";
 const VKSTORE_DOWNLOADS_SUFFIX: &str = "downloads/";
+const VKSTORE_RUNTIME_SUFFIX: &str = "runtime/";
+const VKSTORE_TEMP_SUFFIX: &str = "temp/";
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
@@ -18,18 +20,30 @@ pub struct VolkanicStore {
     pub path: path::PathBuf,
     pub build_path: path::PathBuf,
     pub downloads_path: path::PathBuf,
+    pub runtime_path: path::PathBuf,
+    // TODO: Create temporary file management
+    pub temp_path: path::PathBuf,
 }
 
 impl VolkanicStore {
     async fn create(&self) -> Result<(), StoreError> {
         debug!("Requested store creation at {:?}", self.path);
 
-        if !&self.path.is_dir() {
-            fs::create_dir_all(&self.path).await.map_err(StoreError::FilesystemError)?;
-        } if !&self.build_path.is_dir() {
-            fs::create_dir_all(&self.build_path).await.map_err(StoreError::FilesystemError)?;
-        } if !&self.downloads_path.is_dir() {
-            fs::create_dir_all(&self.downloads_path).await.map_err(StoreError::FilesystemError)?;
+        let to_create = [
+            &self.path,
+            &self.build_path,
+            &self.runtime_path,
+            &self.downloads_path,
+            &self.temp_path,
+        ];
+
+        for p in to_create {
+            if !p.is_dir() {
+                debug!("Creating Volkanic folder: \"{}\"", p.to_string_lossy());
+                fs::create_dir_all(p).await.map_err(StoreError::FilesystemError)?;
+            } else {
+                debug!("Volkanic folder already exists: \"{}\"", p.to_string_lossy());
+            }
         }
 
         Ok(())
@@ -39,10 +53,38 @@ impl VolkanicStore {
             path: path::PathBuf::from(VKSTORE_PATH),
             build_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
             downloads_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_DOWNLOADS_SUFFIX),
+            runtime_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_RUNTIME_SUFFIX),
+            temp_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_TEMP_SUFFIX),
         };
 
         store.create().await?;
 
         Ok(store)
+    }
+    pub async fn clean(&self) -> Result<(), StoreError> {
+        let to_remove = [
+            &self.temp_path,
+        ];
+
+        for dir in to_remove {
+            fs::remove_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
+        }
+
+        Ok(())
+    }
+    pub async fn renew(&self) -> Result<(), StoreError> {
+        let to_clear = [
+            &self.build_path,
+            &self.runtime_path,
+        ];
+
+        for dir in to_clear {
+            if dir.is_dir() {
+                fs::remove_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
+                fs::create_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
+            }
+        }
+
+        Ok(())
     }
 }

@@ -2,13 +2,15 @@ use serde::{Serialize, Deserialize};
 use std::collections::BTreeMap;
 use sysinfo::{System, SystemExt};
 
-use super::ResourceLoadError;
+use super::{ArchiveFormat, ResourceLoadError};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Jdk {
     pub url: String,
     pub sha256: String,
-    pub format: String,
+    #[serde(rename = "home-dir")]
+    pub home_path: String,
+    pub format: ArchiveFormat,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
