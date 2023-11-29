@@ -7,9 +7,7 @@ use std::path;
 use tokio::{fs, io::{self, AsyncReadExt, AsyncWriteExt}};
 use tracing::{info, warn, error};
 
-use crate::{resources::ArchiveFormat, vkstore};
-
-const FILE_BUFFER_SIZE: usize = 1024;
+use crate::{resources::{self, ArchiveFormat}, vkstore};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DownloadError {
@@ -97,12 +95,13 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
         info!("Verifying \"{}\"...", target_path.to_string_lossy());
     }
 
+    let mut file = fs::File::open(store.downloads_path.join(target_path)).await.map_err(DownloadError::FilesystemError)?;
+
+    let mut buffer = [0; resources::conf::FILE_BUFFER_SIZE];
+
     match verification {
         Verification::Sha256(checksum) => {
             let mut hasher = Sha256::new();
-            let mut file = fs::File::open(store.downloads_path.join(target_path)).await.map_err(DownloadError::FilesystemError)?;
-
-            let mut buffer = [0; FILE_BUFFER_SIZE];
 
             loop {
                 let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::FilesystemError)?;
@@ -118,9 +117,6 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
         }
         Verification::Sha512(checksum) => {
             let mut hasher = Sha512::new();
-            let mut file = fs::File::open(store.downloads_path.join(target_path)).await.map_err(DownloadError::FilesystemError)?;
-
-            let mut buffer = [0; FILE_BUFFER_SIZE];
 
             loop {
                 let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::FilesystemError)?;

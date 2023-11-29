@@ -3,13 +3,13 @@ use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tokio::fs;
-use tracing::error;
+use tracing::{info, error};
 
 use crate::resources::{Jdk, JdkConfig};
-use crate::template;
+use crate::template::{self, vkinclude};
 use crate::vkstore;
 
-use super::lock;
+use super::buildinfo;
 use super::misc;
 use super::prepare_jdk;
 
@@ -25,8 +25,10 @@ pub enum JobError {
     DownloadError(misc::DownloadError),
     #[error("Prepare JDK error: {0}")]
     PrepareJdkError(prepare_jdk::PrepareJdkError),
-    #[error("Lock error: {0}")]
-    LockError(lock::LockError),
+    #[error("Build info error: {0}")]
+    BuildInfoError(buildinfo::BuildInfoError),
+    #[error("Not available in Volkanic include folder: {0}")]
+    NotAvailableInIncludeFolder(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -41,8 +43,8 @@ pub enum JobAction {
     #[serde(rename = "download-file")]
     WriteFileRemote { path: path::PathBuf, url: String, sha512: Option<String> },
     /// Copy a file
-    #[serde(rename = "copy-file")]
-    CopyFile { orig_path: path::PathBuf, dest_path: path::PathBuf },
+    #[serde(rename = "from-include")]
+    CopyFromInclude { id: String, template_path: path::PathBuf },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
     PrepareJdk { jdk: Jdk },
@@ -73,8 +75,15 @@ impl JobAction {
 
                 fs::copy(p, store.build_path.join(path)).await.map_err(JobError::FilesystemError)?;
             }
-            JobAction::CopyFile { orig_path, dest_path } => {
-                fs::copy(orig_path, store.build_path.join(dest_path)).await.map_err(JobError::FilesystemError)?;
+            JobAction::CopyFromInclude { id, template_path } => {
+                let include = vkinclude::VolkanicInclude::new().await;
+
+                let p = match include.get(&id) {
+                    Some(p) => p,
+                    None => return Err(JobError::NotAvailableInIncludeFolder(id.to_string())),
+                };
+
+                fs::copy(p, store.build_path.join(template_path)).await.map_err(JobError::FilesystemError)?;
             }
             JobAction::PrepareJdk { jdk } => {
                 prepare_jdk::prepare_jdk(store.clone(), jdk.clone()).await.map_err(JobError::PrepareJdkError)?;
@@ -123,16 +132,22 @@ pub async fn create_jobs(template: &crate::template::Template, jdk_config: JdkCo
     // Setup additional resources
     for resource in &template.resources {
         match resource {
-            template::resource::GenericResource::Remote { url, sha512, path } => {
+            template::resource::GenericResource::Remote { url, sha512, template_path: path } => {
                 jobs.push(Job {
                     title: "Download additional resource".into(),
                     action: JobAction::WriteFileRemote { path: path::PathBuf::from(path.clone()), url: url.clone(), sha512: sha512.clone() },
                 });
             }
-            template::resource::GenericResource::FsCopy { path, template_path } => {
+            template::resource::GenericResource::Base64 { base64: base, template_path } => {
+                jobs.push(Job {
+                    title: "Write file from Base64".into(),
+                    action: JobAction::WriteFileBase64 { path: template_path.clone(), contents: base.clone() },
+                });
+            }
+            template::resource::GenericResource::Include { include_id, template_path } => {
                 jobs.push(Job {
                     title: "Copy additional resource".into(),
-                    action: JobAction::CopyFile { orig_path: path.clone(), dest_path: template_path.clone() },
+                    action: JobAction::CopyFromInclude { id: include_id.to_string(), template_path: template_path.clone() },
                 });
             }
             template::resource::GenericResource::Modrinth { identity: _ } => todo!(),
@@ -142,10 +157,20 @@ pub async fn create_jobs(template: &crate::template::Template, jdk_config: JdkCo
     Ok(jobs)
 }
 
-pub async fn execute_jobs(store: vkstore::VolkanicStore, lock: &mut lock::Lock) -> Result<(), JobError> {
-    let mut to_skip = lock.job_progress;
+pub async fn execute_jobs(store: vkstore::VolkanicStore, build_info: &mut buildinfo::BuildInfo) -> Result<(), JobError> {
+    let mut to_skip = if build_info.job_progress >= build_info.jobs.len() {
+        build_info.job_progress = 0;
 
-    for job in &lock.jobs {
+        0
+    } else {
+        let to_skip = build_info.job_progress;
+
+        info!("Skipping {} jobs", to_skip);
+
+        to_skip
+    };
+
+    for job in &build_info.jobs {
         if to_skip > 0 {
             to_skip -= 1;
             continue;
@@ -153,9 +178,9 @@ pub async fn execute_jobs(store: vkstore::VolkanicStore, lock: &mut lock::Lock) 
 
         job.action.execute(&store).await?;
 
-        lock.job_progress += 1;
+        build_info.job_progress += 1;
         
-        lock.update().await.map_err(JobError::LockError)?;
+        build_info.update().await.map_err(JobError::BuildInfoError)?;
     }
 
     Ok(())

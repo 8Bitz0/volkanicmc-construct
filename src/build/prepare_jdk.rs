@@ -1,6 +1,6 @@
 use std::path;
 use tokio::fs;
-use tracing::{debug, info, error};
+use tracing::{debug, info, warn, error};
 
 use crate::resources::Jdk;
 use crate::vkstore;
@@ -19,8 +19,6 @@ pub enum PrepareJdkError {
     InvalidJdkHome(path::PathBuf),
     #[error("Directory failed to be copied: {0}")]
     DirectoryCopyFailed(path::PathBuf),
-    #[error("Runtime exists")]
-    RuntimeExists,
 }
 
 pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), PrepareJdkError> {
@@ -38,13 +36,8 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
 
     if store.runtime_path.is_dir() {
         if let Ok(r) = store.runtime_path.read_dir() {
-            if r.count() > 0 {
-                error!("Cannot prepare JDK because runtime directory already exists");
-                return Err(PrepareJdkError::RuntimeExists);
-            } else {
-                info!("Deleting existing empty runtime directory");
-                fs::remove_dir_all(&store.runtime_path).await.map_err(PrepareJdkError::FilesystemError)?;
-            }
+            warn!("Removing existing runtime directory");
+            fs::remove_dir_all(&store.runtime_path).await.map_err(PrepareJdkError::FilesystemError)?;
         }
     }
 

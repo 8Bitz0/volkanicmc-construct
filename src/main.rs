@@ -16,12 +16,20 @@ struct Args {
 #[derive(Debug, Subcommand)]
 enum Command {
     Build {
-        path: String,
+        path: path::PathBuf,
         #[arg(short = 'f', long)]
         force: bool,
     },
-    Check { path: String },
+    Check { path: path::PathBuf },
+    #[command(subcommand)]
+    Template(TemplateCommand),
     Create,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+enum TemplateCommand {
+    /// Moves all external "include" files into template
+    Embed { path: path::PathBuf },
 }
 
 #[tokio::main]
@@ -77,6 +85,34 @@ async fn main() {
                     std::process::exit(1);
                 }
             });
+        },
+        Command::Template(command) => match command {
+            TemplateCommand::Embed { path } => {
+                let template = match template::Template::import(path)
+                    .await {
+                        Ok(template) => template,
+                        Err(e) => {
+                            error!("Failed to parse template: {}", e);
+                            std::process::exit(1);
+                        }
+                };
+
+                match template::manage::embed(template).await {
+                    Ok(t) => {
+                        println!("{}", match serde_jsonc::to_string_pretty(&t) {
+                            Ok(json) => json,
+                            Err(e) => {
+                                error!("Failed to serialize template: {}", e);
+                                std::process::exit(1);
+                            }
+                        });
+                    },
+                    Err(e) => {
+                        error!("Failed to embed template: {}", e);
+                        std::process::exit(1);
+                    }
+                };
+            }
         }
     }
 }

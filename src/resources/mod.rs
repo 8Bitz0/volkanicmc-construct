@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+pub mod conf;
 mod jdk;
 
 pub use jdk::{Jdk, JdkArchitectures, JdkConfig, JdkPlatforms, JdkVersions};
