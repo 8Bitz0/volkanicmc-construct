@@ -36,13 +36,13 @@ pub async fn build(template: template::Template, store: vkstore::VolkanicStore, 
             let mut build_info = buildinfo::BuildInfo::get(&store).await.map_err(BuildError::BuildInfoError)?;
 
             if build_info.jobs != jobs {
-                warn!("Build is already present but template has changed. Use \"--force\" to override.");
+                error!("Build is already present but template has changed. Use \"--force\" to override.");
                 return Err(BuildError::BuildPresent);
             }
 
             if build_info.job_progress == build_info.jobs.len() {
                 if force {
-                    warn!("Build is already present. Overriding...");
+                    warn!("Build is already present. Rebuild has been forced.");
 
                     store.renew().await.map_err(BuildError::StoreError)?;
                 } else {
