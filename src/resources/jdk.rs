@@ -54,21 +54,13 @@ impl JdkConfig {
         let os = if let Some((os, _)) = override_sys.clone() {
             os
         } else {
-            if let Some(os) = hostinfo::Os::get() {
-                os
-            } else {
-                return None;
-            }
+            hostinfo::Os::get()?
         };
 
         let arch = if let Some((_, arch)) = override_sys.clone() {
             arch
         } else {
-            if let Some(os) = hostinfo::Arch::get() {
-                os
-            } else {
-                return None;
-            }
+            hostinfo::Arch::get()?
         };
 
         self.versions

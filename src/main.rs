@@ -44,7 +44,7 @@ async fn main() {
 
     match args.command {
         Command::Build { path, force } => {
-            let template = match template::Template::import(path::PathBuf::from(path)).await {
+            let template = match template::Template::import(path).await {
                 Ok(template) => template,
                 Err(e) => {
                     error!("Failed to parse template: {}", e);
@@ -70,7 +70,7 @@ async fn main() {
             };
         }
         Command::Check { path } => {
-            let template = match template::Template::import(path::PathBuf::from(path)).await {
+            let template = match template::Template::import(path).await {
                 Ok(template) => template,
                 Err(e) => {
                     error!("Failed to parse template: {}", e);

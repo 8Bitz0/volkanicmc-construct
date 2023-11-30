@@ -4,7 +4,6 @@ use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info, warn};
 
 use crate::exec;
-use crate::hostinfo;
 use crate::vkstore;
 
 use super::job;
@@ -21,7 +20,7 @@ pub enum BuildInfoError {
     Filesystem(tokio::io::Error),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct BuildInfo {
     #[serde(skip)]
     path: Option<path::PathBuf>,
@@ -31,18 +30,6 @@ pub struct BuildInfo {
     #[serde(rename = "job-progress")]
     pub job_progress: usize,
     pub exec: Option<exec::BuildExecInfo>,
-}
-
-impl Default for BuildInfo {
-    fn default() -> Self {
-        Self {
-            path: None,
-            stray: false,
-            jobs: vec![],
-            job_progress: 0,
-            exec: None,
-        }
-    }
 }
 
 impl BuildInfo {
@@ -56,7 +43,7 @@ impl BuildInfo {
             .await
             .map_err(BuildInfoError::Filesystem)?;
 
-        Ok(serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParse)?)
+        serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParse)
     }
     pub async fn new(store: &vkstore::VolkanicStore) -> Result<BuildInfo, BuildInfoError> {
         let mut build_info = BuildInfo::default();
@@ -107,23 +94,5 @@ impl BuildInfo {
     }
     pub fn set_path(&mut self, store: &vkstore::VolkanicStore) {
         self.path = Some(store.path.join(BUILD_INFO_SUFFIX));
-    }
-    pub async fn remove(&self) -> Result<(), BuildInfoError> {
-        match &self.path {
-            Some(path) => match fs::remove_file(path).await {
-                Ok(_) => {}
-                Err(e) => {
-                    error!("Failed to remove build info file: {}", e);
-                    return Err(BuildInfoError::Filesystem(e));
-                }
-            },
-            None => {
-                warn!("No build info file path was specified. Build info was not removed.");
-            }
-        }
-
-        info!("Build info removed");
-
-        Ok(())
     }
 }

@@ -1,5 +1,5 @@
 use base64::Engine;
-use std::path;
+
 use tokio::{fs, io::AsyncReadExt};
 use tracing::error;
 
@@ -34,7 +34,7 @@ pub async fn embed(template: Template) -> Result<Template, TemplateManagementErr
                     }
                 };
 
-                let mut f = fs::File::open(path::PathBuf::from(p))
+                let mut f = fs::File::open(p)
                     .await
                     .map_err(TemplateManagementError::Filesystem)?;
                 let mut buffer = [0; resources::conf::FILE_BUFFER_SIZE];

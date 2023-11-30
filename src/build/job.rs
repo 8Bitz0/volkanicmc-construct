@@ -103,7 +103,7 @@ impl JobAction {
             JobAction::CopyFromInclude { id, template_path } => {
                 let include = vkinclude::VolkanicInclude::new().await;
 
-                let p = match include.get(&id) {
+                let p = match include.get(id) {
                     Some(p) => p,
                     None => return Err(JobError::NotAvailableInIncludeFolder(id.to_string())),
                 };
@@ -178,7 +178,7 @@ pub async fn create_jobs(
                 jobs.push(Job {
                     title: "Download additional resource".into(),
                     action: JobAction::WriteFileRemote {
-                        path: path::PathBuf::from(path.clone()),
+                        path: path.clone(),
                         url: url.clone(),
                         sha512: sha512.clone(),
                     },

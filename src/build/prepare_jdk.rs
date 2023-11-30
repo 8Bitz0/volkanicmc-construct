@@ -52,15 +52,13 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
     }
 
     if store.runtime_path.is_dir() {
-        if let Ok(r) = store.runtime_path.read_dir() {
-            warn!("Removing existing runtime directory");
-            fs::remove_dir_all(&store.runtime_path)
-                .await
-                .map_err(PrepareJdkError::Filesystem)?;
-        }
+        warn!("Removing existing runtime directory");
+        fs::remove_dir_all(&store.runtime_path)
+            .await
+            .map_err(PrepareJdkError::Filesystem)?;
     }
 
-    match copy_dir::copy_dir(&ex_path.join(&jdk.home_path), &store.runtime_path) {
+    match copy_dir::copy_dir(ex_path.join(&jdk.home_path), &store.runtime_path) {
         Ok(_) => {
             info!("Copied JDK to runtime directory");
         }

@@ -40,9 +40,9 @@ pub async fn get_remote_filename(url: &str) -> String {
     let split_url = url.split('/').collect::<Vec<&str>>();
 
     if split_url.len() < 2 {
-        return "".to_string();
+        "".to_string()
     } else {
-        return split_url[split_url.len() - 1].to_string();
+        split_url[split_url.len() - 1].to_string()
     }
 }
 
