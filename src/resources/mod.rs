@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 pub mod conf;
 mod jdk;
 
-pub use jdk::{Jdk, JdkArchitectures, JdkConfig, JdkPlatforms, JdkVersions};
+pub use jdk::{Jdk, JdkConfig};
 
 const JDK_FILE: &str = include_str!("jdk.yml");
 
