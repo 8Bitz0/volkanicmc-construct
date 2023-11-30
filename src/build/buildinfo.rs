@@ -3,6 +3,8 @@ use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, info, warn, error};
 
+use crate::exec;
+use crate::hostinfo;
 use crate::vkstore;
 
 use super::job;
@@ -26,7 +28,9 @@ pub struct BuildInfo {
     #[serde(skip, default)]
     pub stray: bool,
     pub jobs: Vec<job::Job>,
+    #[serde(rename = "job-progress")]
     pub job_progress: usize,
+    pub exec: Option<exec::BuildExecInfo>,
 }
 
 impl Default for BuildInfo {
@@ -36,6 +40,7 @@ impl Default for BuildInfo {
             stray: false,
             jobs: vec![],
             job_progress: 0,
+            exec: None,
         }
     }
 }
@@ -54,12 +59,7 @@ impl BuildInfo {
         Ok(serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParseError)?)
     }
     pub async fn new(store: &vkstore::VolkanicStore) -> Result<BuildInfo, BuildInfoError> {
-        let mut build_info = BuildInfo {
-            jobs: vec![],
-            stray: false,
-            job_progress: 0,
-            path: None,
-        };
+        let mut build_info = BuildInfo::default();
 
         build_info.set_path(store);
         

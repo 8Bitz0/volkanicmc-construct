@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use std::collections::BTreeMap;
-use sysinfo::{System, SystemExt};
+
+use crate::hostinfo;
 
 use super::{ArchiveFormat, ResourceLoadError};
 
@@ -16,13 +17,13 @@ pub struct Jdk {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JdkArchitectures {
     #[serde(flatten)]
-    pub platforms: BTreeMap<String, Jdk>,
+    pub platforms: BTreeMap<hostinfo::Arch, Jdk>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JdkPlatforms {
     #[serde(flatten)]
-    pub architectures: BTreeMap<String, JdkArchitectures>,
+    pub architectures: BTreeMap<hostinfo::Os, JdkArchitectures>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -44,52 +45,17 @@ impl JdkConfig {
             versions: serde_yaml::from_str::<Vec<JdkVersions>>(resource_name).map_err(ResourceLoadError::YamlParseError)?
         })
     }
-    pub async fn find(&self, version: impl std::fmt::Display, override_sys: Option<(String, String)>) -> Option<Jdk> {
+    pub async fn find(&self, version: impl std::fmt::Display, override_sys: Option<(hostinfo::Os, hostinfo::Arch)>) -> Option<Jdk> {
         let os = if let Some((os, _)) = override_sys.clone() {
             os
         } else {
-            match std::env::consts::OS {
-                "android" => "android",
-                "freebsd" => "freebsd",
-                "ios" => "ios",
-                "macos" => "mac",
-                "netbsd" => "netbsd",
-                "openbsd" => "openbsd",
-                "dragonfly" => "dragonfly",
-                "solaris" => "solaris",
-                "windows" => "windows",
-                "linux" => {
-                    let mut sys = System::new();
-                    sys.refresh_system();
-    
-                    match sys.distribution_id().as_str() {
-                        "alpine" => "alpine",
-                        _ => "linux",
-                    }
-                },
-                _ => return None,
-            }.to_string()
+            if let Some(os) = hostinfo::Os::get() { os } else { return None }
         };
     
         let arch = if let Some((_, arch)) = override_sys.clone() {
             arch
         } else {
-            match std::env::consts::ARCH {
-                "x86" => "x86",
-                "x86_64" => "amd64",
-                "arm" => "arm",
-                "aarch64" => "arm64",
-                "m68k" => "m68k",
-                "csky" => "csky",
-                "mips" => "mips",
-                "mips64" => "mips64",
-                "powerpc" => "ppc",
-                "powerpc64" => "ppc64",
-                "riscv64" => "riscv64",
-                "s390x" => "s390x",
-                "sparc64" => "sparc64",
-                _ => return None,
-            }.to_string()
+            if let Some(os) = hostinfo::Arch::get() { os } else { return None }
         };
     
         self
@@ -116,8 +82,31 @@ mod tests {
     #[tokio::test]
     async fn test_find() {
         let jdk_list = JdkConfig::parse_list().await.unwrap();
-        let jdk = jdk_list.find("8".to_string(), Some(("linux".to_string(), "amd64".to_string()))).await;
+        let jdk = jdk_list.find("8".to_string(), Some((hostinfo::Os::Linux { is_alpine: false }, hostinfo::Arch::Amd64))).await;
         println!("{:#?}", jdk);
         assert!(jdk.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_serialize() {
+        let mut jdk_platforms = BTreeMap::new();
+        jdk_platforms.insert(hostinfo::Os::Linux { is_alpine: false }, JdkArchitectures {
+            platforms: BTreeMap::new(),
+        });
+
+        let mut jdk_versions = BTreeMap::new();
+        jdk_versions.insert("8".to_string(), JdkPlatforms {
+            architectures: jdk_platforms,
+        });
+
+        let jdk_list = JdkConfig {
+            versions: vec![
+                JdkVersions {
+                    versions: jdk_versions
+                }
+            ]
+        };
+
+        println!("{}", serde_yaml::to_string(&jdk_list).unwrap());
     }
 }

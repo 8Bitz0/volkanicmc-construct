@@ -44,7 +44,11 @@ pub enum JobAction {
     WriteFileRemote { path: path::PathBuf, url: String, sha512: Option<String> },
     /// Copy a file
     #[serde(rename = "from-include")]
-    CopyFromInclude { id: String, template_path: path::PathBuf },
+    CopyFromInclude {
+        id: String,
+        #[serde(rename = "template-path")]
+        template_path: path::PathBuf
+    },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
     PrepareJdk { jdk: Jdk },

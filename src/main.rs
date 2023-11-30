@@ -3,6 +3,8 @@ use std::path;
 use tracing::{info, error};
 
 mod build;
+mod exec;
+mod hostinfo;
 mod resources;
 mod template;
 mod vkstore;
