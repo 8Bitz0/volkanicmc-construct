@@ -27,7 +27,8 @@ pub enum Os {
 
 impl<'de> Deserialize<'de> for Os {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
@@ -81,7 +82,8 @@ pub enum Arch {
 
 impl<'de> Deserialize<'de> for Arch {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
@@ -99,7 +101,10 @@ impl<'de> Deserialize<'de> for Arch {
             "s390x" => Ok(Arch::S390x),
             "sparc" => Ok(Arch::Sparc),
             "sparc64" => Ok(Arch::Sparc64),
-            _ => Err(serde::de::Error::custom(format!("Invalid architecture: {}", s))),
+            _ => Err(serde::de::Error::custom(format!(
+                "Invalid architecture: {}",
+                s
+            ))),
         }
     }
 }
@@ -124,7 +129,7 @@ impl Os {
                     "alpine" => Os::Linux { is_alpine: true },
                     _ => Os::Linux { is_alpine: false },
                 }
-            },
+            }
             _ => return None,
         })
     }

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path;
 use tokio::{fs, io::AsyncWriteExt};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::exec;
 use crate::hostinfo;
@@ -52,9 +52,9 @@ impl BuildInfo {
     pub async fn get(store: &vkstore::VolkanicStore) -> Result<BuildInfo, BuildInfoError> {
         let build_info_path = store.path.join(BUILD_INFO_SUFFIX);
 
-        let f_contents = fs::read_to_string(&build_info_path).await.map_err(
-            BuildInfoError::Filesystem,
-        )?;
+        let f_contents = fs::read_to_string(&build_info_path)
+            .await
+            .map_err(BuildInfoError::Filesystem)?;
 
         Ok(serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParse)?)
     }
@@ -62,7 +62,7 @@ impl BuildInfo {
         let mut build_info = BuildInfo::default();
 
         build_info.set_path(store);
-        
+
         build_info.update().await?;
 
         info!("Directory build info created");
@@ -72,31 +72,36 @@ impl BuildInfo {
     pub async fn update(&self) -> Result<(), BuildInfoError> {
         match &self.path {
             Some(path) => {
-                let mut f = fs::File::create(&path).await.map_err(
-                    BuildInfoError::Filesystem,
-                )?;
-                
-                match f.write_all(match serde_jsonc::to_string_pretty(&self) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!("Failed to serialize build info file: {}", e);
-                        return Err(BuildInfoError::JsonSerialize(e));
-                    }
-                }.as_bytes()).await {
+                let mut f = fs::File::create(&path)
+                    .await
+                    .map_err(BuildInfoError::Filesystem)?;
+
+                match f
+                    .write_all(
+                        match serde_jsonc::to_string_pretty(&self) {
+                            Ok(s) => s,
+                            Err(e) => {
+                                error!("Failed to serialize build info file: {}", e);
+                                return Err(BuildInfoError::JsonSerialize(e));
+                            }
+                        }
+                        .as_bytes(),
+                    )
+                    .await
+                {
                     Ok(_) => {}
                     Err(e) => {
                         error!("Failed to write build info file: {}", e);
                         return Err(BuildInfoError::Filesystem(e));
                     }
                 };
-        
+
                 debug!("Build info updated");
             }
             None => {
                 warn!("No build info file path was specified. Build info not updated.");
             }
         }
-        
 
         Ok(())
     }
@@ -105,15 +110,13 @@ impl BuildInfo {
     }
     pub async fn remove(&self) -> Result<(), BuildInfoError> {
         match &self.path {
-            Some(path) => {
-                match fs::remove_file(path).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        error!("Failed to remove build info file: {}", e);
-                        return Err(BuildInfoError::Filesystem(e));
-                    }
+            Some(path) => match fs::remove_file(path).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to remove build info file: {}", e);
+                    return Err(BuildInfoError::Filesystem(e));
                 }
-            }
+            },
             None => {
                 warn!("No build info file path was specified. Build info was not removed.");
             }

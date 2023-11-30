@@ -40,9 +40,14 @@ impl VolkanicStore {
         for p in to_create {
             if !p.is_dir() {
                 debug!("Creating Volkanic folder: \"{}\"", p.to_string_lossy());
-                fs::create_dir_all(p).await.map_err(StoreError::Filesystem)?;
+                fs::create_dir_all(p)
+                    .await
+                    .map_err(StoreError::Filesystem)?;
             } else {
-                debug!("Volkanic folder already exists: \"{}\"", p.to_string_lossy());
+                debug!(
+                    "Volkanic folder already exists: \"{}\"",
+                    p.to_string_lossy()
+                );
             }
         }
 
@@ -62,26 +67,27 @@ impl VolkanicStore {
         Ok(store)
     }
     pub async fn clean(&self) -> Result<(), StoreError> {
-        let to_remove = [
-            &self.temp_path,
-        ];
+        let to_remove = [&self.temp_path];
 
         for dir in to_remove {
-            fs::remove_dir_all(dir).await.map_err(StoreError::Filesystem)?;
+            fs::remove_dir_all(dir)
+                .await
+                .map_err(StoreError::Filesystem)?;
         }
 
         Ok(())
     }
     pub async fn renew(&self) -> Result<(), StoreError> {
-        let to_clear = [
-            &self.build_path,
-            &self.runtime_path,
-        ];
+        let to_clear = [&self.build_path, &self.runtime_path];
 
         for dir in to_clear {
             if dir.is_dir() {
-                fs::remove_dir_all(dir).await.map_err(StoreError::Filesystem)?;
-                fs::create_dir_all(dir).await.map_err(StoreError::Filesystem)?;
+                fs::remove_dir_all(dir)
+                    .await
+                    .map_err(StoreError::Filesystem)?;
+                fs::create_dir_all(dir)
+                    .await
+                    .map_err(StoreError::Filesystem)?;
             }
         }
 

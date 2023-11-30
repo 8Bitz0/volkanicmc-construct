@@ -38,7 +38,7 @@ pub enum GenericResource {
         base64: String,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
-        template_path: path::PathBuf 
+        template_path: path::PathBuf,
     },
     /// Copy file from Volkanic include folder to template
     #[serde(rename = "include")]
@@ -47,11 +47,9 @@ pub enum GenericResource {
         include_id: String,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
-        template_path: path::PathBuf
+        template_path: path::PathBuf,
     },
     /// Modrinth mod
     #[serde(rename = "modrinth")]
-    Modrinth {
-        identity: ModrinthProject
-    },
+    Modrinth { identity: ModrinthProject },
 }

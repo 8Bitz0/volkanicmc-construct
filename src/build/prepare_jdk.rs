@@ -1,11 +1,13 @@
 use std::path;
 use tokio::fs;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::resources::Jdk;
 use crate::vkstore;
 
-use super::misc::{DownloadError, extract, ExtractionError, get_remote_filename, download, Verification};
+use super::misc::{
+    download, extract, get_remote_filename, DownloadError, ExtractionError, Verification,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PrepareJdkError {
@@ -24,20 +26,37 @@ pub enum PrepareJdkError {
 pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), PrepareJdkError> {
     let jdk_name = get_remote_filename(&jdk.url).await;
 
-    download(store.clone(), &jdk.url, Verification::Sha256(jdk.sha256), jdk_name.into()).await.map_err(PrepareJdkError::Download)?;
+    download(
+        store.clone(),
+        &jdk.url,
+        Verification::Sha256(jdk.sha256),
+        jdk_name.into(),
+    )
+    .await
+    .map_err(PrepareJdkError::Download)?;
 
-    let p = store.downloads_path.join(get_remote_filename(&jdk.url).await);
-    let ex_path = extract(store.clone(), p, jdk.format).await
+    let p = store
+        .downloads_path
+        .join(get_remote_filename(&jdk.url).await);
+    let ex_path = extract(store.clone(), p, jdk.format)
+        .await
         .map_err(PrepareJdkError::Extraction)?;
 
-    if !ex_path.join(&jdk.home_path).join("bin").join("java").is_file() {
+    if !ex_path
+        .join(&jdk.home_path)
+        .join("bin")
+        .join("java")
+        .is_file()
+    {
         return Err(PrepareJdkError::InvalidJdkHome(ex_path.join(jdk.home_path)));
     }
 
     if store.runtime_path.is_dir() {
         if let Ok(r) = store.runtime_path.read_dir() {
             warn!("Removing existing runtime directory");
-            fs::remove_dir_all(&store.runtime_path).await.map_err(PrepareJdkError::Filesystem)?;
+            fs::remove_dir_all(&store.runtime_path)
+                .await
+                .map_err(PrepareJdkError::Filesystem)?;
         }
     }
 
@@ -47,7 +66,9 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
         }
         Err(e) => {
             debug!("Errors ocurred during JDK copy: {:#?}", e);
-            return Err(PrepareJdkError::DirectoryCopyFailed(ex_path.join(jdk.home_path)));
+            return Err(PrepareJdkError::DirectoryCopyFailed(
+                ex_path.join(jdk.home_path),
+            ));
         }
     }
 

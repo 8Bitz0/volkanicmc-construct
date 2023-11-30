@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 use crate::hostinfo;
@@ -34,37 +34,50 @@ pub struct JdkVersions {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JdkConfig {
-    versions: Vec<JdkVersions>
+    versions: Vec<JdkVersions>,
 }
 
 impl JdkConfig {
     pub async fn parse_list() -> Result<JdkConfig, ResourceLoadError> {
         let resource_name = super::JDK_FILE;
-        
+
         Ok(JdkConfig {
-            versions: serde_yaml::from_str::<Vec<JdkVersions>>(resource_name).map_err(ResourceLoadError::YamlParse)?
+            versions: serde_yaml::from_str::<Vec<JdkVersions>>(resource_name)
+                .map_err(ResourceLoadError::YamlParse)?,
         })
     }
-    pub async fn find(&self, version: impl std::fmt::Display, override_sys: Option<(hostinfo::Os, hostinfo::Arch)>) -> Option<Jdk> {
+    pub async fn find(
+        &self,
+        version: impl std::fmt::Display,
+        override_sys: Option<(hostinfo::Os, hostinfo::Arch)>,
+    ) -> Option<Jdk> {
         let os = if let Some((os, _)) = override_sys.clone() {
             os
         } else {
-            if let Some(os) = hostinfo::Os::get() { os } else { return None }
+            if let Some(os) = hostinfo::Os::get() {
+                os
+            } else {
+                return None;
+            }
         };
-    
+
         let arch = if let Some((_, arch)) = override_sys.clone() {
             arch
         } else {
-            if let Some(os) = hostinfo::Arch::get() { os } else { return None }
+            if let Some(os) = hostinfo::Arch::get() {
+                os
+            } else {
+                return None;
+            }
         };
-    
-        self
-            .versions
+
+        self.versions
             .iter()
             .flat_map(|jdk_versions| jdk_versions.versions.get(&version.to_string()))
             .flat_map(|jdk_platforms| jdk_platforms.architectures.get(&os))
             .flat_map(|jdk_architectures| jdk_architectures.platforms.get(&arch))
-            .next().cloned()
+            .next()
+            .cloned()
     }
 }
 
@@ -82,7 +95,15 @@ mod tests {
     #[tokio::test]
     async fn test_find() {
         let jdk_list = JdkConfig::parse_list().await.unwrap();
-        let jdk = jdk_list.find("8".to_string(), Some((hostinfo::Os::Linux { is_alpine: false }, hostinfo::Arch::Amd64))).await;
+        let jdk = jdk_list
+            .find(
+                "8".to_string(),
+                Some((
+                    hostinfo::Os::Linux { is_alpine: false },
+                    hostinfo::Arch::Amd64,
+                )),
+            )
+            .await;
         println!("{:#?}", jdk);
         assert!(jdk.is_some());
     }
@@ -90,21 +111,25 @@ mod tests {
     #[tokio::test]
     async fn test_serialize() {
         let mut jdk_platforms = BTreeMap::new();
-        jdk_platforms.insert(hostinfo::Os::Linux { is_alpine: false }, JdkArchitectures {
-            platforms: BTreeMap::new(),
-        });
+        jdk_platforms.insert(
+            hostinfo::Os::Linux { is_alpine: false },
+            JdkArchitectures {
+                platforms: BTreeMap::new(),
+            },
+        );
 
         let mut jdk_versions = BTreeMap::new();
-        jdk_versions.insert("8".to_string(), JdkPlatforms {
-            architectures: jdk_platforms,
-        });
+        jdk_versions.insert(
+            "8".to_string(),
+            JdkPlatforms {
+                architectures: jdk_platforms,
+            },
+        );
 
         let jdk_list = JdkConfig {
-            versions: vec![
-                JdkVersions {
-                    versions: jdk_versions
-                }
-            ]
+            versions: vec![JdkVersions {
+                versions: jdk_versions,
+            }],
         };
 
         println!("{}", serde_yaml::to_string(&jdk_list).unwrap());

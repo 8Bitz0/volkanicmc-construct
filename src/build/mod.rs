@@ -1,7 +1,7 @@
-use tracing::{info, warn, error};  
+use tracing::{error, info, warn};
 
-mod job;
 mod buildinfo;
+mod job;
 mod misc;
 mod prepare_jdk;
 
@@ -23,17 +23,27 @@ pub enum BuildError {
     BuildPresent,
 }
 
-pub async fn build(template: template::Template, store: vkstore::VolkanicStore, force: bool) -> Result<(), BuildError> {
-    let jdk_config = JdkConfig::parse_list().await.map_err(BuildError::ResourceLoad)?;
+pub async fn build(
+    template: template::Template,
+    store: vkstore::VolkanicStore,
+    force: bool,
+) -> Result<(), BuildError> {
+    let jdk_config = JdkConfig::parse_list()
+        .await
+        .map_err(BuildError::ResourceLoad)?;
 
     info!("Creating jobs...");
-    let jobs = job::create_jobs(&template, jdk_config).await.map_err(BuildError::Job)?;
+    let jobs = job::create_jobs(&template, jdk_config)
+        .await
+        .map_err(BuildError::Job)?;
 
     info!("Scheduled {} jobs", jobs.len());
 
     let mut build_info = {
         if buildinfo::BuildInfo::exists(&store).await {
-            let mut build_info = buildinfo::BuildInfo::get(&store).await.map_err(BuildError::BuildInfo)?;
+            let mut build_info = buildinfo::BuildInfo::get(&store)
+                .await
+                .map_err(BuildError::BuildInfo)?;
 
             if build_info.jobs != jobs {
                 error!("Build is already present but template has changed. Use \"--force\" to override.");
@@ -55,7 +65,9 @@ pub async fn build(template: template::Template, store: vkstore::VolkanicStore, 
 
             build_info
         } else {
-            let mut build_info = buildinfo::BuildInfo::new(&store).await.map_err(BuildError::BuildInfo)?;
+            let mut build_info = buildinfo::BuildInfo::new(&store)
+                .await
+                .map_err(BuildError::BuildInfo)?;
 
             build_info.jobs = jobs;
 
@@ -65,7 +77,9 @@ pub async fn build(template: template::Template, store: vkstore::VolkanicStore, 
         }
     };
 
-    job::execute_jobs(store.clone(), &mut build_info).await.map_err(BuildError::Job)?;
+    job::execute_jobs(store.clone(), &mut build_info)
+        .await
+        .map_err(BuildError::Job)?;
 
     store.clean().await.map_err(BuildError::Store)?;
 

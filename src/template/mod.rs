@@ -11,11 +11,11 @@ pub use parse::ParseError;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Template {
     /// Name of the template. The name should briefly describe and identify the template.
-    /// 
+    ///
     /// Example: "1.12.2 Vanilla"
     pub name: String,
     /// Longer description of the template.
-    /// 
+    ///
     /// Example: "Server running vanilla Minecraft 1.12.2"
     pub description: String,
     /// Simple identifier of the author.

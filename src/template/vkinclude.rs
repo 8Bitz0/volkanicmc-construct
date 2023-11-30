@@ -5,7 +5,6 @@ const INCLUDE_DIR_NAME: &str = ".vkinclude";
 #[derive(Clone, Debug)]
 pub struct VolkanicInclude {
     path: path::PathBuf,
-
 }
 
 impl VolkanicInclude {

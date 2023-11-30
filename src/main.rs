@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::path;
-use tracing::{info, error};
+use tracing::{error, info};
 
 mod build;
 mod exec;
@@ -22,7 +22,9 @@ enum Command {
         #[arg(short = 'f', long)]
         force: bool,
     },
-    Check { path: path::PathBuf },
+    Check {
+        path: path::PathBuf,
+    },
     #[command(subcommand)]
     Template(TemplateCommand),
     Create,
@@ -42,13 +44,12 @@ async fn main() {
 
     match args.command {
         Command::Build { path, force } => {
-            let template = match template::Template::import(path::PathBuf::from(path))
-                .await {
-                    Ok(template) => template,
-                    Err(e) => {
-                        error!("Failed to parse template: {}", e);
-                        std::process::exit(1);
-                    }
+            let template = match template::Template::import(path::PathBuf::from(path)).await {
+                Ok(template) => template,
+                Err(e) => {
+                    error!("Failed to parse template: {}", e);
+                    std::process::exit(1);
+                }
             };
             info!("Template \"{}\" parsed correctly", template.name);
 
@@ -61,7 +62,7 @@ async fn main() {
             };
 
             match build::build(template, store, force).await {
-                Ok(()) => {},
+                Ok(()) => {}
                 Err(e) => {
                     error!("Failed to build template: {}", e);
                     std::process::exit(1);
@@ -69,52 +70,56 @@ async fn main() {
             };
         }
         Command::Check { path } => {
-            let template = match template::Template::import(path::PathBuf::from(path))
-                .await {
+            let template = match template::Template::import(path::PathBuf::from(path)).await {
+                Ok(template) => template,
+                Err(e) => {
+                    error!("Failed to parse template: {}", e);
+                    std::process::exit(1);
+                }
+            };
+            info!("Template \"{}\" parsed correctly", template.name);
+        }
+        Command::Create => {
+            println!(
+                "{}",
+                match serde_jsonc::to_string_pretty(&template::Template::default()) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        error!("Failed to serialize template: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            );
+        }
+        Command::Template(command) => match command {
+            TemplateCommand::Embed { path } => {
+                let template = match template::Template::import(path).await {
                     Ok(template) => template,
                     Err(e) => {
                         error!("Failed to parse template: {}", e);
                         std::process::exit(1);
                     }
-            };
-            info!("Template \"{}\" parsed correctly", template.name);
-        },
-        Command::Create => {
-            println!("{}", match serde_jsonc::to_string_pretty(&template::Template::default()) {
-                Ok(json) => json,
-                Err(e) => {
-                    error!("Failed to serialize template: {}", e);
-                    std::process::exit(1);
-                }
-            });
-        },
-        Command::Template(command) => match command {
-            TemplateCommand::Embed { path } => {
-                let template = match template::Template::import(path)
-                    .await {
-                        Ok(template) => template,
-                        Err(e) => {
-                            error!("Failed to parse template: {}", e);
-                            std::process::exit(1);
-                        }
                 };
 
                 match template::manage::embed(template).await {
                     Ok(t) => {
-                        println!("{}", match serde_jsonc::to_string_pretty(&t) {
-                            Ok(json) => json,
-                            Err(e) => {
-                                error!("Failed to serialize template: {}", e);
-                                std::process::exit(1);
+                        println!(
+                            "{}",
+                            match serde_jsonc::to_string_pretty(&t) {
+                                Ok(json) => json,
+                                Err(e) => {
+                                    error!("Failed to serialize template: {}", e);
+                                    std::process::exit(1);
+                                }
                             }
-                        });
-                    },
+                        );
+                    }
                     Err(e) => {
                         error!("Failed to embed template: {}", e);
                         std::process::exit(1);
                     }
                 };
             }
-        }
+        },
     }
 }
