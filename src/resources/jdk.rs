@@ -42,7 +42,7 @@ impl JdkConfig {
         let resource_name = super::JDK_FILE;
         
         Ok(JdkConfig {
-            versions: serde_yaml::from_str::<Vec<JdkVersions>>(resource_name).map_err(ResourceLoadError::YamlParseError)?
+            versions: serde_yaml::from_str::<Vec<JdkVersions>>(resource_name).map_err(ResourceLoadError::YamlParse)?
         })
     }
     pub async fn find(&self, version: impl std::fmt::Display, override_sys: Option<(hostinfo::Os, hostinfo::Arch)>) -> Option<Jdk> {

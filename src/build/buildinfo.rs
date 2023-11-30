@@ -14,11 +14,11 @@ const BUILD_INFO_SUFFIX: &str = "build.json";
 #[derive(Debug, thiserror::Error)]
 pub enum BuildInfoError {
     #[error("Failed to parse JSON: {0}")]
-    JsonParseError(serde_jsonc::Error),
+    JsonParse(serde_jsonc::Error),
     #[error("Failed to serialize JSON: {0}")]
-    JsonSerializeError(serde_jsonc::Error),
+    JsonSerialize(serde_jsonc::Error),
     #[error("Filesystem error: {0}")]
-    FilesystemError(tokio::io::Error),
+    Filesystem(tokio::io::Error),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -53,10 +53,10 @@ impl BuildInfo {
         let build_info_path = store.path.join(BUILD_INFO_SUFFIX);
 
         let f_contents = fs::read_to_string(&build_info_path).await.map_err(
-            BuildInfoError::FilesystemError,
+            BuildInfoError::Filesystem,
         )?;
 
-        Ok(serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParseError)?)
+        Ok(serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParse)?)
     }
     pub async fn new(store: &vkstore::VolkanicStore) -> Result<BuildInfo, BuildInfoError> {
         let mut build_info = BuildInfo::default();
@@ -73,20 +73,20 @@ impl BuildInfo {
         match &self.path {
             Some(path) => {
                 let mut f = fs::File::create(&path).await.map_err(
-                    BuildInfoError::FilesystemError,
+                    BuildInfoError::Filesystem,
                 )?;
                 
                 match f.write_all(match serde_jsonc::to_string_pretty(&self) {
                     Ok(s) => s,
                     Err(e) => {
                         error!("Failed to serialize build info file: {}", e);
-                        return Err(BuildInfoError::JsonSerializeError(e));
+                        return Err(BuildInfoError::JsonSerialize(e));
                     }
                 }.as_bytes()).await {
                     Ok(_) => {}
                     Err(e) => {
                         error!("Failed to write build info file: {}", e);
-                        return Err(BuildInfoError::FilesystemError(e));
+                        return Err(BuildInfoError::Filesystem(e));
                     }
                 };
         
@@ -110,7 +110,7 @@ impl BuildInfo {
                     Ok(_) => {}
                     Err(e) => {
                         error!("Failed to remove build info file: {}", e);
-                        return Err(BuildInfoError::FilesystemError(e));
+                        return Err(BuildInfoError::Filesystem(e));
                     }
                 }
             }

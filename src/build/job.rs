@@ -18,15 +18,15 @@ pub enum JobError {
     #[error("No JDK found for your system (version: {0})")]
     JdkNotFound(String),
     #[error("Filesystem error: {0}")]
-    FilesystemError(tokio::io::Error),
+    Filesystem(tokio::io::Error),
     #[error("Base64 error: {0}")]
-    Base64Error(base64::DecodeError),
+    Base64(base64::DecodeError),
     #[error("Download error: {0}")]
-    DownloadError(misc::DownloadError),
+    Download(misc::DownloadError),
     #[error("Prepare JDK error: {0}")]
-    PrepareJdkError(prepare_jdk::PrepareJdkError),
+    PrepareJdk(prepare_jdk::PrepareJdkError),
     #[error("Build info error: {0}")]
-    BuildInfoError(buildinfo::BuildInfoError),
+    BuildInfo(buildinfo::BuildInfoError),
     #[error("Not available in Volkanic include folder: {0}")]
     NotAvailableInIncludeFolder(String),
 }
@@ -58,7 +58,7 @@ impl JobAction {
     pub async fn execute(&self, store: &vkstore::VolkanicStore) -> Result<(), JobError> {
         match self {
             JobAction::CreateDir { path } => {
-                fs::create_dir_all(store.build_path.join(path)).await.map_err(JobError::FilesystemError)?;
+                fs::create_dir_all(store.build_path.join(path)).await.map_err(JobError::Filesystem)?;
             }
             JobAction::WriteFileBase64 { path, contents } => {
                 let base64_config = base64::engine::GeneralPurposeConfig::new();
@@ -66,18 +66,18 @@ impl JobAction {
 
                 let contents = base64_engine.decode(contents).map_err(|err| {
                     error!("Failed to decode base64: {}", err);
-                    JobError::Base64Error(err)
+                    JobError::Base64(err)
                 })?;
 
-                fs::write(store.build_path.join(path), contents).await.map_err(JobError::FilesystemError)?;
+                fs::write(store.build_path.join(path), contents).await.map_err(JobError::Filesystem)?;
             }
             JobAction::WriteFileRemote { path, url, sha512 } => {
                 let p = misc::download(store.clone(), url, match sha512 {
                     Some(sha512) => misc::Verification::Sha512(sha512.to_string()),
                     None => misc::Verification::None,
-                }, path.to_path_buf()).map_err(JobError::DownloadError).await?;
+                }, path.to_path_buf()).map_err(JobError::Download).await?;
 
-                fs::copy(p, store.build_path.join(path)).await.map_err(JobError::FilesystemError)?;
+                fs::copy(p, store.build_path.join(path)).await.map_err(JobError::Filesystem)?;
             }
             JobAction::CopyFromInclude { id, template_path } => {
                 let include = vkinclude::VolkanicInclude::new().await;
@@ -87,10 +87,10 @@ impl JobAction {
                     None => return Err(JobError::NotAvailableInIncludeFolder(id.to_string())),
                 };
 
-                fs::copy(p, store.build_path.join(template_path)).await.map_err(JobError::FilesystemError)?;
+                fs::copy(p, store.build_path.join(template_path)).await.map_err(JobError::Filesystem)?;
             }
             JobAction::PrepareJdk { jdk } => {
-                prepare_jdk::prepare_jdk(store.clone(), jdk.clone()).await.map_err(JobError::PrepareJdkError)?;
+                prepare_jdk::prepare_jdk(store.clone(), jdk.clone()).await.map_err(JobError::PrepareJdk)?;
             },
         }
 
@@ -184,7 +184,7 @@ pub async fn execute_jobs(store: vkstore::VolkanicStore, build_info: &mut buildi
 
         build_info.job_progress += 1;
         
-        build_info.update().await.map_err(JobError::BuildInfoError)?;
+        build_info.update().await.map_err(JobError::BuildInfo)?;
     }
 
     Ok(())

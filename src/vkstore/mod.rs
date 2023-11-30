@@ -12,7 +12,7 @@ const VKSTORE_TEMP_SUFFIX: &str = "temp/";
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
     #[error("Filesystem error: {0}")]
-    FilesystemError(std::io::Error),
+    Filesystem(std::io::Error),
 }
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl VolkanicStore {
         for p in to_create {
             if !p.is_dir() {
                 debug!("Creating Volkanic folder: \"{}\"", p.to_string_lossy());
-                fs::create_dir_all(p).await.map_err(StoreError::FilesystemError)?;
+                fs::create_dir_all(p).await.map_err(StoreError::Filesystem)?;
             } else {
                 debug!("Volkanic folder already exists: \"{}\"", p.to_string_lossy());
             }
@@ -67,7 +67,7 @@ impl VolkanicStore {
         ];
 
         for dir in to_remove {
-            fs::remove_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
+            fs::remove_dir_all(dir).await.map_err(StoreError::Filesystem)?;
         }
 
         Ok(())
@@ -80,8 +80,8 @@ impl VolkanicStore {
 
         for dir in to_clear {
             if dir.is_dir() {
-                fs::remove_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
-                fs::create_dir_all(dir).await.map_err(StoreError::FilesystemError)?;
+                fs::remove_dir_all(dir).await.map_err(StoreError::Filesystem)?;
+                fs::create_dir_all(dir).await.map_err(StoreError::Filesystem)?;
             }
         }
 

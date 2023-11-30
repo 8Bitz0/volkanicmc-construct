@@ -12,11 +12,11 @@ use crate::{resources::{self, ArchiveFormat}, vkstore};
 #[derive(Debug, thiserror::Error)]
 pub enum DownloadError {
     #[error("HTTP error: {0}")]
-    HttpError(reqwest::Error),
+    Http(reqwest::Error),
     #[error("Filesystem error: {0}")]
-    FilesystemError(io::Error),
+    Filesystem(io::Error),
     #[error("Hex error: {0}")]
-    HexError(hex::FromHexError),
+    Hex(hex::FromHexError),
     #[error("Directory already exists: {0}")]
     DirectoryAlreadyExists(path::PathBuf),
     #[error("Verification failure: {0}")]
@@ -57,7 +57,7 @@ pub async fn download(store: vkstore::VolkanicStore, url: &str, verification: Ve
 
     let client = Client::new();
     
-    let response = client.get(url).send().await.map_err(DownloadError::HttpError)?;
+    let response = client.get(url).send().await.map_err(DownloadError::Http)?;
 
     let content_length = response.content_length().unwrap_or(0);
     let pb = ProgressBar::new(content_length);
@@ -65,15 +65,15 @@ pub async fn download(store: vkstore::VolkanicStore, url: &str, verification: Ve
         .template("[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} ({eta})").unwrap()
         .progress_chars("#/-"));
 
-    let mut dest = fs::File::create(&p).await.map_err(DownloadError::FilesystemError)?;
+    let mut dest = fs::File::create(&p).await.map_err(DownloadError::Filesystem)?;
 
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(DownloadError::HttpError)?;
+        let chunk = chunk.map_err(DownloadError::Http)?;
         pb.inc(chunk.len() as u64);
 
-        dest.write_all(&chunk).await.map_err(DownloadError::FilesystemError)?;
+        dest.write_all(&chunk).await.map_err(DownloadError::Filesystem)?;
     }
 
     pb.finish_with_message("Download complete");
@@ -95,7 +95,7 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
         info!("Verifying \"{}\"...", target_path.to_string_lossy());
     }
 
-    let mut file = fs::File::open(store.downloads_path.join(target_path)).await.map_err(DownloadError::FilesystemError)?;
+    let mut file = fs::File::open(store.downloads_path.join(target_path)).await.map_err(DownloadError::Filesystem)?;
 
     let mut buffer = [0; resources::conf::FILE_BUFFER_SIZE];
 
@@ -104,7 +104,7 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
             let mut hasher = Sha256::new();
 
             loop {
-                let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::FilesystemError)?;
+                let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::Filesystem)?;
 
                 if bytes_read == 0 {
                     break;
@@ -113,13 +113,13 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
                 hasher.update(&buffer[..bytes_read]);
             }
             
-            Ok(hasher.finalize()[..] == hex::decode(checksum).map_err(DownloadError::HexError)?)
+            Ok(hasher.finalize()[..] == hex::decode(checksum).map_err(DownloadError::Hex)?)
         }
         Verification::Sha512(checksum) => {
             let mut hasher = Sha512::new();
 
             loop {
-                let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::FilesystemError)?;
+                let bytes_read = file.read(&mut buffer).await.map_err(DownloadError::Filesystem)?;
 
                 if bytes_read == 0 {
                     break;
@@ -128,7 +128,7 @@ pub async fn verify_hash(store: vkstore::VolkanicStore, target_path: path::PathB
                 hasher.update(&buffer[..bytes_read]);
             }
             
-            Ok(hasher.finalize()[..] == hex::decode(checksum).map_err(DownloadError::HexError)?)
+            Ok(hasher.finalize()[..] == hex::decode(checksum).map_err(DownloadError::Hex)?)
         }
         Verification::None => Ok(true),
     }

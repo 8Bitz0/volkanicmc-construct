@@ -10,7 +10,7 @@ use super::{resource, Template, vkinclude};
 #[derive(Debug, thiserror::Error)]
 pub enum TemplateManagementError {
     #[error("Filesystem error: {0}")]
-    FilesystemError(std::io::Error),
+    Filesystem(std::io::Error),
 }
 
 pub async fn embed(template: Template) -> Result<Template, TemplateManagementError> {
@@ -28,13 +28,13 @@ pub async fn embed(template: Template) -> Result<Template, TemplateManagementErr
                     },
                 };
 
-                let mut f = fs::File::open(path::PathBuf::from(p)).await.map_err(TemplateManagementError::FilesystemError)?;
+                let mut f = fs::File::open(path::PathBuf::from(p)).await.map_err(TemplateManagementError::Filesystem)?;
                 let mut buffer = [0; resources::conf::FILE_BUFFER_SIZE];
 
                 let mut f_contents: Vec<u8> = vec![];
 
                 loop {
-                    let bytes_read = f.read(&mut buffer).await.map_err(TemplateManagementError::FilesystemError)?;
+                    let bytes_read = f.read(&mut buffer).await.map_err(TemplateManagementError::Filesystem)?;
     
                     if bytes_read == 0 {
                         break;
