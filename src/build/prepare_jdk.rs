@@ -2,7 +2,7 @@ use std::path;
 use tokio::fs;
 use tracing::{debug, error, info, warn};
 
-use crate::resources::Jdk;
+use crate::resources::{self, Jdk};
 use crate::vkstore;
 
 use super::misc::{
@@ -44,8 +44,7 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
 
     if !ex_path
         .join(&jdk.home_path)
-        .join("bin")
-        .join("java")
+        .join(resources::conf::JDK_BIN_FILE)
         .is_file()
     {
         return Err(PrepareJdkError::InvalidJdkHome(ex_path.join(jdk.home_path)));
