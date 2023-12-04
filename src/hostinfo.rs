@@ -21,8 +21,10 @@ pub enum Os {
     Solaris,
     #[serde(rename = "windows")]
     Windows,
+    #[serde(rename = "alpine")]
+    Alpine,
     #[serde(rename = "linux")]
-    Linux { is_alpine: bool },
+    Linux,
 }
 
 impl<'de> Deserialize<'de> for Os {
@@ -41,8 +43,8 @@ impl<'de> Deserialize<'de> for Os {
             "dragonfly" => Ok(Os::Dragonfly),
             "solaris" => Ok(Os::Solaris),
             "windows" => Ok(Os::Windows),
-            "linux" => Ok(Os::Linux { is_alpine: false }),
-            "alpine" => Ok(Os::Linux { is_alpine: true }),
+            "alpine" => Ok(Os::Alpine),
+            "linux" => Ok(Os::Linux),
             _ => Err(serde::de::Error::custom(format!("Invalid OS: {}", s))),
         }
     }
@@ -126,8 +128,8 @@ impl Os {
                 sys.refresh_system();
 
                 match sys.distribution_id().as_str() {
-                    "alpine" => Os::Linux { is_alpine: true },
-                    _ => Os::Linux { is_alpine: false },
+                    "alpine" => Os::Alpine,
+                    _ => Os::Linux,
                 }
             }
             _ => return None,

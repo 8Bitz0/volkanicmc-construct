@@ -90,40 +90,10 @@ mod tests {
         let jdk = jdk_list
             .find(
                 "8".to_string(),
-                Some((
-                    hostinfo::Os::Linux { is_alpine: false },
-                    hostinfo::Arch::Amd64,
-                )),
+                Some((hostinfo::Os::Linux, hostinfo::Arch::Amd64)),
             )
             .await;
         println!("{:#?}", jdk);
         assert!(jdk.is_some());
-    }
-
-    #[tokio::test]
-    async fn test_serialize() {
-        let mut jdk_platforms = BTreeMap::new();
-        jdk_platforms.insert(
-            hostinfo::Os::Linux { is_alpine: false },
-            JdkArchitectures {
-                platforms: BTreeMap::new(),
-            },
-        );
-
-        let mut jdk_versions = BTreeMap::new();
-        jdk_versions.insert(
-            "8".to_string(),
-            JdkPlatforms {
-                architectures: jdk_platforms,
-            },
-        );
-
-        let jdk_list = JdkConfig {
-            versions: vec![JdkVersions {
-                versions: jdk_versions,
-            }],
-        };
-
-        println!("{}", serde_yaml::to_string(&jdk_list).unwrap());
     }
 }
