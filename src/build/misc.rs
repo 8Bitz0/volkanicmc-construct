@@ -172,6 +172,8 @@ pub enum ExtractionError {
     NoFileName(path::PathBuf),
     #[error("Tar archive error: {0}")]
     TarError(std::io::Error),
+    #[error("Zip archive error: {0}")]
+    ZipError(zip::result::ZipError),
 }
 
 pub async fn extract(
@@ -207,9 +209,18 @@ pub async fn extract(
                 .unpack(&new_path)
                 .map_err(ExtractionError::TarError)?;
         }
-        // TODO: Add zip archive support
         ArchiveFormat::Zip => {
-            todo!()
+            let f = std::fs::File::open(&orig_path).map_err(ExtractionError::FilesystemError)?;
+
+            let mut archive = zip::ZipArchive::new(f).map_err(ExtractionError::ZipError)?;
+
+            fs::create_dir_all(&new_path)
+                .await
+                .map_err(ExtractionError::FilesystemError)?;
+
+            archive
+                .extract(&new_path)
+                .map_err(ExtractionError::ZipError)?;
         }
     }
 
