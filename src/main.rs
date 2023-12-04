@@ -25,6 +25,7 @@ enum Command {
     Check {
         path: path::PathBuf,
     },
+    Run,
     #[command(subcommand)]
     Template(TemplateCommand),
     Create,
@@ -90,6 +91,23 @@ async fn main() {
                     }
                 }
             );
+        }
+        Command::Run => {
+            let store = match vkstore::VolkanicStore::init().await {
+                Ok(store) => store,
+                Err(e) => {
+                    error!("Failed to initialize store: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            match exec::run(&store).await {
+                Ok(()) => {}
+                Err(e) => {
+                    error!("Failed to execute template: {}", e);
+                    std::process::exit(1);
+                }
+            };
         }
         Command::Template(command) => match command {
             TemplateCommand::Embed { path } => {

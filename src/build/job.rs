@@ -3,9 +3,9 @@ use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tokio::fs;
-use tracing::{error, info};
+use tracing::error;
 
-use crate::resources::{Jdk, JdkConfig};
+use crate::resources::{self, Jdk, JdkConfig};
 use crate::template::{self, vkinclude};
 use crate::vkstore;
 
@@ -159,7 +159,7 @@ pub async fn create_jobs(
             jobs.push(Job {
                 title: "Download server software".into(),
                 action: JobAction::WriteFileRemote {
-                    path: path::PathBuf::from("server.jar"),
+                    path: resources::conf::SERVER_SOFTWARE_FILE.into(),
                     url: url.clone(),
                     sha512: Some(sha512.clone()),
                 },
@@ -219,24 +219,9 @@ pub async fn execute_jobs(
     store: vkstore::VolkanicStore,
     build_info: &mut buildinfo::BuildInfo,
 ) -> Result<(), JobError> {
-    let mut to_skip = if build_info.job_progress >= build_info.jobs.len() {
-        build_info.job_progress = 0;
-
-        0
-    } else {
-        let to_skip = build_info.job_progress;
-
-        info!("Skipping {} jobs", to_skip);
-
-        to_skip
-    };
+    build_info.job_progress = 0;
 
     for job in &build_info.jobs {
-        if to_skip > 0 {
-            to_skip -= 1;
-            continue;
-        }
-
         job.action.execute(&store).await?;
 
         build_info.job_progress += 1;

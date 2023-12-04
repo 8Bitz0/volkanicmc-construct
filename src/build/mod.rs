@@ -1,18 +1,26 @@
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 mod buildinfo;
 mod job;
 mod misc;
 mod prepare_jdk;
 
+use crate::exec;
+use crate::hostinfo;
 use crate::resources::{self, JdkConfig};
 use crate::template;
 use crate::vkstore;
+
+pub use buildinfo::{BuildInfo, BuildInfoError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum BuildError {
     #[error("Build info error: {0}")]
     BuildInfo(buildinfo::BuildInfoError),
+    #[error("Unknown platform")]
+    UnknownPlatform,
+    #[error("Unknown architecture")]
+    UnknownArchitecture,
     #[error("Job error: {0}")]
     Job(job::JobError),
     #[error("Resource error: {0}")]
@@ -45,21 +53,21 @@ pub async fn build(
                 .await
                 .map_err(BuildError::BuildInfo)?;
 
-            if build_info.jobs != jobs {
-                error!("Build is already present but template has changed. Use \"--force\" to override.");
-                return Err(BuildError::BuildPresent);
-            }
+            if build_info.job_progress == build_info.jobs.len() && !build_info.jobs.is_empty() {
+                warn!("Build is already present.");
 
-            if build_info.job_progress == build_info.jobs.len() {
                 if force {
-                    warn!("Build is already present. Rebuild has been forced.");
-
-                    store.renew().await.map_err(BuildError::Store)?;
+                    warn!("Rebuild forced")
                 } else {
-                    error!("Build is already present. Use \"--force\" to override.");
+                    error!("Please specify the \"--force\" flag to rebuild.");
                     return Err(BuildError::BuildPresent);
                 }
+            } else {
+                warn!("Incomplete build found. Rebuilding...");
             }
+
+            build_info.jobs = jobs;
+            store.renew().await.map_err(BuildError::Store)?;
 
             build_info.set_path(&store);
 
@@ -82,6 +90,27 @@ pub async fn build(
         .map_err(BuildError::Job)?;
 
     store.clean().await.map_err(BuildError::Store)?;
+
+    debug!("Setting build execution info");
+
+    build_info.exec = Some(exec::BuildExecInfo {
+        arch: if let Some(a) = hostinfo::Arch::get() {
+            a
+        } else {
+            return Err(BuildError::UnknownArchitecture);
+        },
+        os: if let Some(a) = hostinfo::Os::get() {
+            a
+        } else {
+            return Err(BuildError::UnknownPlatform);
+        },
+        runtime_args: vec![],
+        runtime_exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
+        server_args: vec!["-nogui".to_string()],
+        server_jar_path: resources::conf::SERVER_SOFTWARE_FILE.into(),
+    });
+
+    build_info.update().await.map_err(BuildError::BuildInfo)?;
 
     info!("Build complete");
 

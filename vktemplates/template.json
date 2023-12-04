@@ -24,6 +24,12 @@
         "id": "server.properties",
         "template-path": "server.properties"
       }
+    },
+    {
+      "include": {
+        "id": "eula.txt",
+        "template-path": "eula.txt"
+      }
     }
   ]
 }

@@ -1,12 +1,18 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use crate::hostinfo;
+
+mod run;
+
+pub use run::run;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BuildExecInfo {
     /// Target system architecture
-    pub arch: String,
+    pub arch: hostinfo::Arch,
     /// Target operating system
-    pub os: String,
+    pub os: hostinfo::Os,
     /// Path to the runtime executable relative to the runtime directory.
     #[serde(rename = "runtime-exec-path")]
     pub runtime_exec_path: PathBuf,
