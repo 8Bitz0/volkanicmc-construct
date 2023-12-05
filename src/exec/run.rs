@@ -7,6 +7,9 @@ use crate::{
     vkstore::VolkanicStore,
 };
 
+#[cfg(target_os = "windows")]
+use crate::resources;
+
 #[derive(Debug, thiserror::Error)]
 pub enum ExecutionError {
     #[error("Build not found")]
@@ -27,6 +30,11 @@ pub enum ExecutionError {
     ChildProcessFailed,
     #[error("Child process closed with error code: {0}")]
     ChildProcessFailedCode(i32),
+}
+
+#[cfg(target_os = "windows")]
+pub fn winpath_fix(path: String) -> String {
+    path.replace("\\\\?\\", "")
 }
 
 pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
@@ -99,22 +107,46 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
         full_server_exec_path.display()
     );
 
-    let mut runtime_args: Vec<String> = vec![];
-    runtime_args.extend(exec_info.runtime_args.clone());
-    runtime_args.push("-jar".to_string());
-    runtime_args.push(full_server_exec_path.to_string_lossy().to_string());
-    runtime_args.extend(exec_info.server_args);
+    let command: (String, Vec<String>) = {
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut runtime_args = vec![];
+            runtime_args.extend(exec_info.runtime_args.clone());
+            runtime_args.push("-jar".to_string());
+            runtime_args.push(full_server_exec_path.to_string_lossy().to_string());
+            runtime_args.extend(exec_info.server_args);
 
-    debug!("Spawning child process with arguments: {:?}", runtime_args);
+            (
+                full_runtime_exec_path.to_string_lossy().to_string(),
+                runtime_args,
+            )
+        }
+        #[cfg(target_os = "windows")]
+        {
+            let mut runtime_args = vec![];
+            runtime_args.push("/C".to_string());
+            runtime_args.push(winpath_fix(
+                full_runtime_exec_path.to_string_lossy().to_string(),
+            ));
+            runtime_args.extend(exec_info.runtime_args.clone());
+            runtime_args.push("-jar".to_string());
+            runtime_args.push(winpath_fix(
+                full_server_exec_path.to_string_lossy().to_string(),
+            ));
+            runtime_args.extend(exec_info.server_args);
+
+            (resources::conf::WIN_SHELL_CMD.to_string(), runtime_args)
+        }
+    };
 
     debug!(
         "Executing command: \"{} {}\"",
-        full_runtime_exec_path.display(),
-        runtime_args.join(" ")
+        command.0,
+        command.1.join(" "),
     );
 
-    let mut server_proc = process::Command::new(full_runtime_exec_path)
-        .args(runtime_args)
+    let mut server_proc = process::Command::new(command.0)
+        .args(command.1)
         .current_dir(&store.build_path)
         .spawn()
         .map_err(ExecutionError::ChildProcessSpawnFailed)?;
