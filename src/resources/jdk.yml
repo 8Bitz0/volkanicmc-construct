@@ -5,6 +5,11 @@
             sha256: ffabf152c42d091ff16c920f0c4e267a4f13598bdbda2b32dd78a24054d97c0d
             home-dir: amazon-corretto-8.392.08.1-linux-x64/
             format: tar.gz
+        arm:
+            url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jdk_arm_linux_hotspot_8u392b08.tar.gz
+            sha256: 9e574cff0b8dba29930e38eeec4cb4350a77a56a27d03fa316fa6b2383eeef9d
+            home-dir: jdk8u392-b08-aarch32-20231020/
+            format: tar.gz
         arm64:
             url: https://corretto.aws/downloads/resources/8.392.08.1/amazon-corretto-8.392.08.1-linux-aarch64.tar.gz
             sha256: 25f2bf6103c97cc44371d888b649449178baeaa4033d1867a3d12bc328e96cd4
@@ -50,6 +55,11 @@
             sha256: 0cf11d8e41d7b28a3dbb95cbdd90c398c310a9ea870e5a06dac65a004612aa62
             home-dir: amazon-corretto-17.0.9.8.1-linux-x64/
             format: tar.gz
+        arm:
+            url: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_arm_linux_hotspot_17.0.9_9.tar.gz
+            sha256: 626b2375b08554ad4cbad440a7ff490277bc196852589dd48cab514a7428fa8b
+            home-dir: jdk-17.0.9+9
+            format: tar.gz
         arm64:
             url: https://corretto.aws/downloads/resources/17.0.9.8.1/amazon-corretto-17.0.9.8.1-linux-aarch64.tar.gz
             sha256: 8141bc6ea84ce103a040128040c2f527418a6aa3849353dcfa3cf77488524499
@@ -86,7 +96,7 @@
         arm64:
             url: https://aka.ms/download-jdk/microsoft-jdk-17.0.9-windows-aarch64.zip
             sha256: 36857ca1c2d6f1b69da3499b49d4d91e5ca5743350b74f3c6da24642832047f6
-            home-dir: jdk-17.0.9+8
+            home-dir: jdk-17.0.9+8/
             format: zip
         x86:
             url: https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9.1/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.9_9.zip
