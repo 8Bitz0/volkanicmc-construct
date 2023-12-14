@@ -19,6 +19,10 @@ pub enum JobError {
     JdkNotFound(String),
     #[error("Filesystem error: {0}")]
     Filesystem(tokio::io::Error),
+    #[error("No file name found in path: {0}")]
+    NoFileNameInPath(path::PathBuf),
+    #[error("Creating path ancestor directories failed: {0}")]
+    CreateFilesystemAncestors(misc::CreateAncestorError),
     #[error("Base64 error: {0}")]
     Base64(base64::DecodeError),
     #[error("Download error: {0}")]
@@ -64,12 +68,21 @@ pub enum JobAction {
 impl JobAction {
     pub async fn execute(&self, store: &vkstore::VolkanicStore) -> Result<(), JobError> {
         match self {
-            JobAction::CreateDir { path } => {
-                fs::create_dir_all(store.build_path.join(path))
+            JobAction::CreateDir {
+                path: template_path,
+            } => {
+                fs::create_dir_all(store.build_path.join(template_path))
                     .await
                     .map_err(JobError::Filesystem)?;
             }
-            JobAction::WriteFileBase64 { path, contents } => {
+            JobAction::WriteFileBase64 {
+                path: template_path,
+                contents,
+            } => {
+                misc::create_ancestors(template_path.clone())
+                    .await
+                    .map_err(JobError::CreateFilesystemAncestors)?;
+
                 let base64_config = base64::engine::GeneralPurposeConfig::new();
                 let base64_engine =
                     base64::engine::GeneralPurpose::new(&base64::alphabet::STANDARD, base64_config);
@@ -79,28 +92,48 @@ impl JobAction {
                     JobError::Base64(err)
                 })?;
 
-                fs::write(store.build_path.join(path), contents)
+                fs::write(store.build_path.join(template_path), contents)
                     .await
                     .map_err(JobError::Filesystem)?;
             }
-            JobAction::WriteFileRemote { path, url, sha512 } => {
-                let p = misc::download(
+            JobAction::WriteFileRemote {
+                path: template_path,
+                url,
+                sha512,
+            } => {
+                let abs_path = store.build_path.join(template_path);
+
+                misc::create_ancestors(abs_path.clone())
+                    .await
+                    .map_err(JobError::CreateFilesystemAncestors)?;
+
+                let name = if let Some(name) = template_path.file_name() {
+                    name.to_string_lossy().to_string()
+                } else {
+                    return Err(JobError::NoFileNameInPath(abs_path));
+                };
+
+                let p = misc::download_indicatif(
                     store.clone(),
                     url,
                     match sha512 {
                         Some(sha512) => misc::Verification::Sha512(sha512.to_string()),
                         None => misc::Verification::None,
                     },
-                    path.to_path_buf(),
+                    name,
                 )
                 .map_err(JobError::Download)
                 .await?;
 
-                fs::copy(p, store.build_path.join(path))
-                    .await
-                    .map_err(JobError::Filesystem)?;
+                fs::copy(p, abs_path).await.map_err(JobError::Filesystem)?;
             }
             JobAction::CopyFromInclude { id, template_path } => {
+                let abs_path = store.build_path.join(template_path);
+
+                misc::create_ancestors(abs_path.clone())
+                    .await
+                    .map_err(JobError::CreateFilesystemAncestors)?;
+
                 let include = vkinclude::VolkanicInclude::new().await;
 
                 let p = match include.get(id) {
