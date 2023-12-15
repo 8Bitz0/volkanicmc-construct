@@ -188,7 +188,11 @@ pub async fn create_jobs(
 
     // Setup server software
     match &template.server {
-        template::resource::ServerExecResource::Java { url, sha512 } => {
+        template::resource::ServerExecResource::Java {
+            url,
+            sha512,
+            args: _,
+        } => {
             jobs.push(Job {
                 title: "Download server software".into(),
                 action: JobAction::WriteFileRemote {

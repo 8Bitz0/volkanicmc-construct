@@ -1,0 +1,36 @@
+{
+  "name": "1.8.9 Vanilla",
+  "description": "Server running Minecraft 1.8.9",
+  "author": "VolkanicMC",
+  "version": [
+    1,
+    0,
+    0
+  ],
+  "runtime": {
+    "jdk": {
+      "version": "8"
+    }
+  },
+  "server": {
+    "java": {
+      "url": "https://launcher.mojang.com/mc/game/1.8.9/server/b58b2ceb36e01bcd8dbf49c8fb66c55a9f0676cd/server.jar",
+      "sha512": "554803d45842ff8f549835fc4a638fb1349f85c61d1cc441af956ac04eb3f2de480116b13e9cd7a763bc8bace05c23f476319b034159d52845427d38406e387e",
+      "args": "nogui"
+    }
+  },
+  "resources": [
+    {
+      "include": {
+        "id": "1-8-vanilla.properties",
+        "template-path": "server.properties"
+      }
+    },
+    {
+      "include": {
+        "id": "eula.txt",
+        "template-path": "eula.txt"
+      }
+    }
+  ]
+}

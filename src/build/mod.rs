@@ -85,6 +85,14 @@ pub async fn build(
         }
     };
 
+    let server_args: Option<Vec<String>> = match &template.server {
+        template::resource::ServerExecResource::Java {
+            url: _,
+            sha512: _,
+            args: params,
+        } => Some(params.split(' ').map(|s| s.to_string()).collect()),
+    };
+
     job::execute_jobs(store.clone(), &mut build_info)
         .await
         .map_err(BuildError::Job)?;
@@ -106,7 +114,10 @@ pub async fn build(
         },
         runtime_args: vec![],
         runtime_exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
-        server_args: vec!["-nogui".to_string()],
+        server_args: match server_args {
+            Some(args) => args,
+            None => vec![],
+        },
         server_jar_path: resources::conf::SERVER_SOFTWARE_FILE.into(),
     });
 

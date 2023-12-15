@@ -15,7 +15,8 @@
   "server": {
     "java": {
       "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/318/downloads/paper-1.20.2-318.jar",
-      "sha512": "93cc58ab048f2b2c6da1e0d71d98901fb39eb13f776f49baf87edfdb6d4d0d027df4cfdc6d03360843d50ef83b368962266e034b9bbd15baa18d4f0953960169"
+      "sha512": "93cc58ab048f2b2c6da1e0d71d98901fb39eb13f776f49baf87edfdb6d4d0d027df4cfdc6d03360843d50ef83b368962266e034b9bbd15baa18d4f0953960169",
+      "args": "-nogui"
     }
   },
   "resources": [
@@ -28,7 +29,7 @@
     },
     {
       "include": {
-        "id": "server.properties",
+        "id": "1-20-paper.properties",
         "template-path": "server.properties"
       }
     },
