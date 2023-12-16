@@ -39,7 +39,20 @@ enum TemplateCommand {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    #[cfg(feature = "debug_log")]
+    {
+        println!("Debug logging enabled");
+        tracing_subscriber::fmt()
+            .event_format(tracing_subscriber::fmt::format().pretty())
+            .init();
+    }
+
+    #[cfg(not(feature = "debug_log"))]
+    {
+        tracing_subscriber::fmt()
+            .event_format(tracing_subscriber::fmt::format().compact())
+            .init();
+    }
 
     let args = Args::parse();
 

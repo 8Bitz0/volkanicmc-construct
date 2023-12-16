@@ -32,7 +32,6 @@ impl VolkanicStore {
         let to_create = [
             &self.path,
             &self.build_path,
-            &self.runtime_path,
             &self.downloads_path,
             &self.temp_path,
         ];

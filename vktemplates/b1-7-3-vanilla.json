@@ -1,0 +1,36 @@
+{
+  "name": "Beta 1.7.3 Vanilla",
+  "description": "Server running Minecraft Beta 1.7.3",
+  "author": "VolkanicMC",
+  "version": [
+    1,
+    0,
+    0
+  ],
+  "runtime": {
+    "jdk": {
+      "version": "8"
+    }
+  },
+  "server": {
+    "java": {
+      "url": "http://files.betacraft.uk/server-archive/beta/b1.7.3.jar",
+      "sha512": "6728a8f60c2d2b40878d11c8cc986f259816314cad3b685180420faba6928ad064efb355789c4f50625f7eaa2b577b9376252f0e20cab0cb865cb1a47b14e930",
+      "args": "nogui"
+    }
+  },
+  "resources": [
+    {
+      "include": {
+        "id": "b1-7-vanilla.properties",
+        "template-path": "server.properties"
+      }
+    },
+    {
+      "include": {
+        "id": "eula.txt",
+        "template-path": "eula.txt"
+      }
+    }
+  ]
+}

@@ -6,7 +6,7 @@ use crate::resources::{self, Jdk};
 use crate::vkstore;
 
 use super::misc::{
-    download, extract, get_remote_filename, DownloadError, ExtractionError, Verification,
+    download_indicatif, extract, get_remote_filename, DownloadError, ExtractionError, Verification,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -26,11 +26,11 @@ pub enum PrepareJdkError {
 pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), PrepareJdkError> {
     let jdk_name = get_remote_filename(&jdk.url).await;
 
-    download(
+    download_indicatif(
         store.clone(),
         &jdk.url,
         Verification::Sha256(jdk.sha256),
-        jdk_name.into(),
+        jdk_name,
     )
     .await
     .map_err(PrepareJdkError::Download)?;

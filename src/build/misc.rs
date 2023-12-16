@@ -8,7 +8,7 @@ use tokio::{
     fs,
     io::{self, AsyncReadExt, AsyncWriteExt},
 };
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     resources::{self, ArchiveFormat},
@@ -46,11 +46,11 @@ pub async fn get_remote_filename(url: &str) -> String {
     }
 }
 
-pub async fn download(
+pub async fn download_indicatif(
     store: vkstore::VolkanicStore,
     url: &str,
     verification: Verification,
-    name: path::PathBuf,
+    name: String,
 ) -> Result<path::PathBuf, DownloadError> {
     let p = store.downloads_path.join(&name);
 
@@ -59,12 +59,14 @@ pub async fn download(
     }
 
     if p.is_file() {
-        if verify_hash(store.clone(), name.clone(), &verification).await? {
+        if verify_hash(p.clone(), &verification).await? {
             return Ok(p);
         } else {
-            warn!("Previously downloaded file for \"{}\" was unable to verify. The file will be re-downloaded.", name.to_string_lossy());
+            warn!("Previously downloaded file for \"{}\" was unable to verify. The file will be re-downloaded.", name);
         }
     }
+
+    info!("Downloading \"{}\"...", name);
 
     let client = Client::new();
 
@@ -79,9 +81,13 @@ pub async fn download(
             .progress_chars("#/-"),
     );
 
-    let mut dest = fs::File::create(&p)
-        .await
-        .map_err(DownloadError::Filesystem)?;
+    let mut dest = match fs::File::create(&p).await {
+        Ok(f) => f,
+        Err(e) => {
+            error!("Failed to create file \"{}\": {}", p.to_string_lossy(), e);
+            return Err(DownloadError::Filesystem(e));
+        }
+    };
 
     let mut stream = response.bytes_stream();
 
@@ -89,18 +95,22 @@ pub async fn download(
         let chunk = chunk.map_err(DownloadError::Http)?;
         pb.inc(chunk.len() as u64);
 
-        dest.write_all(&chunk)
-            .await
-            .map_err(DownloadError::Filesystem)?;
+        match dest.write_all(&chunk).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Failed to write to file \"{}\": {}", p.to_string_lossy(), e);
+                return Err(DownloadError::Filesystem(e));
+            }
+        }
     }
 
     pb.finish_with_message("Download complete");
 
     if p.is_file() {
-        if verify_hash(store.clone(), name.clone(), &verification).await? {
+        if verify_hash(p.clone(), &verification).await? {
             return Ok(p);
         } else {
-            error!("Downloaded file for \"{}\" was unable to verify. This could be an issue with the template, or somebody is doing something nasty.", name.to_string_lossy());
+            error!("Downloaded file for \"{}\" was unable to verify. This could be an issue with the template, or somebody is doing something nasty.", name);
             return Err(DownloadError::VerificationFailure(url.to_string()));
         }
     }
@@ -109,7 +119,6 @@ pub async fn download(
 }
 
 pub async fn verify_hash(
-    store: vkstore::VolkanicStore,
     target_path: path::PathBuf,
     verification: &Verification,
 ) -> Result<bool, DownloadError> {
@@ -117,9 +126,17 @@ pub async fn verify_hash(
         info!("Verifying \"{}\"...", target_path.to_string_lossy());
     }
 
-    let mut file = fs::File::open(store.downloads_path.join(target_path))
-        .await
-        .map_err(DownloadError::Filesystem)?;
+    let mut file = match fs::File::open(target_path.clone()).await {
+        Ok(f) => f,
+        Err(e) => {
+            error!(
+                "Failed to open file \"{}\": {}",
+                target_path.to_string_lossy(),
+                e
+            );
+            return Err(DownloadError::Filesystem(e));
+        }
+    };
 
     let mut buffer = [0; resources::conf::FILE_BUFFER_SIZE];
 
@@ -225,4 +242,67 @@ pub async fn extract(
     }
 
     Ok(new_path)
+}
+
+#[derive(Debug, PartialEq)]
+pub enum FsObjectType {
+    None,
+    File,
+    Directory,
+}
+
+impl std::fmt::Display for FsObjectType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+pub fn fs_obj(path: path::PathBuf) -> FsObjectType {
+    if path.is_file() {
+        FsObjectType::File
+    } else if path.is_dir() {
+        FsObjectType::Directory
+    } else {
+        FsObjectType::None
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CreateAncestorError {
+    #[error("Filesystem error: {0}")]
+    FilesystemError(io::Error),
+    #[error("Found wrong filesystem object at: \"{0}\" (expected: {1}, found: {2})")]
+    WrongFsObject(path::PathBuf, FsObjectType, FsObjectType),
+    #[error("No parent directory for path: {0}")]
+    NoParentDir(path::PathBuf),
+}
+
+pub async fn create_ancestors(path: path::PathBuf) -> Result<(), CreateAncestorError> {
+    debug!("Creating ancestors for \"{}\"", path.to_string_lossy());
+    if let Some(parent) = path.clone().parent() {
+        debug!("Direct parent path: \"{}\"", parent.to_string_lossy());
+        match fs_obj(path.clone()) {
+            FsObjectType::Directory => {
+                debug!("Ancestors already exist for \"{}\"", path.to_string_lossy());
+                Ok(())
+            }
+            FsObjectType::None => {
+                fs::create_dir_all(parent)
+                    .await
+                    .map_err(CreateAncestorError::FilesystemError)?;
+
+                Ok(())
+            }
+            _ => {
+                error!("Wrong filesystem object at: \"{}\"", path.to_string_lossy());
+                Err(CreateAncestorError::WrongFsObject(
+                    path.clone(),
+                    FsObjectType::Directory,
+                    fs_obj(path),
+                ))
+            }
+        }
+    } else {
+        Err(CreateAncestorError::NoParentDir(path))
+    }
 }

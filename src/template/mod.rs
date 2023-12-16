@@ -47,6 +47,7 @@ impl Default for Template {
             server: resource::ServerExecResource::Java {
                 url: "https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/291/downloads/paper-1.20.2-291.jar".into(),
                 sha512: "6179a94b15cbfd141431e509806ab5ce04655effea9866a5a33673b82e7fffe6fb438147565b73c98140e5cf1a5b7d9b083978c46d5239fd08b26863c423a820".into(),
+                args: "-nogui".into(),
             },
             resources: vec![
                 resource::GenericResource::Base64 {

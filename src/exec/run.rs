@@ -38,6 +38,11 @@ pub fn winpath_fix(path: String) -> String {
 }
 
 pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
+    if !BuildInfo::exists(store).await {
+        error!("There's no build in the current directory!");
+        return Err(ExecutionError::BuildNotFound);
+    }
+
     let build_info = BuildInfo::get(store)
         .await
         .map_err(ExecutionError::BuildInfoRetrieval)?;

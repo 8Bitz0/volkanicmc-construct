@@ -16,7 +16,11 @@ pub enum ServerRuntimeResource {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ServerExecResource {
     #[serde(rename = "java")]
-    Java { url: String, sha512: String },
+    Java {
+        url: String,
+        sha512: String,
+        args: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

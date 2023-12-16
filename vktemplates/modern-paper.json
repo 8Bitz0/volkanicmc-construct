@@ -1,0 +1,43 @@
+{
+  "name": "1.20.2 Paper",
+  "description": "Server running Minecraft 1.20.2 with PaperMC",
+  "author": "VolkanicMC",
+  "version": [
+    1,
+    0,
+    0
+  ],
+  "runtime": {
+    "jdk": {
+      "version": "17"
+    }
+  },
+  "server": {
+    "java": {
+      "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/318/downloads/paper-1.20.2-318.jar",
+      "sha512": "93cc58ab048f2b2c6da1e0d71d98901fb39eb13f776f49baf87edfdb6d4d0d027df4cfdc6d03360843d50ef83b368962266e034b9bbd15baa18d4f0953960169",
+      "args": "-nogui"
+    }
+  },
+  "resources": [
+    {
+      "remote": {
+        "url": "https://ci.lucko.me/job/spark/398/artifact/spark-bukkit/build/libs/spark-1.10.57-bukkit.jar",
+        "sha512": "af31d682860601e2b5c3ba04d48cb0d5659e2f4a6a47e1db3017c4f6ec3b971be55d2f82a0dfdb27afcbc713be1b72526ec10f7397537ae3fb233866a781b176",
+        "template-path": "plugins/spark.jar"
+      }
+    },
+    {
+      "include": {
+        "id": "1-20-paper.properties",
+        "template-path": "server.properties"
+      }
+    },
+    {
+      "include": {
+        "id": "eula.txt",
+        "template-path": "eula.txt"
+      }
+    }
+  ]
+}
