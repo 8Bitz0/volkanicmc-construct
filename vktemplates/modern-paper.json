@@ -23,7 +23,7 @@
     {
       "remote": {
         "url": "https://ci.lucko.me/job/spark/398/artifact/spark-bukkit/build/libs/spark-1.10.57-bukkit.jar",
-        "sha256": "af31d682860601e2b5c3ba04d48cb0d5659e2f4a6a47e1db3017c4f6ec3b971be55d2f82a0dfdb27afcbc713be1b72526ec10f7397537ae3fb233866a781b176",
+        "sha512": "af31d682860601e2b5c3ba04d48cb0d5659e2f4a6a47e1db3017c4f6ec3b971be55d2f82a0dfdb27afcbc713be1b72526ec10f7397537ae3fb233866a781b176",
         "template-path": "plugins/spark.jar"
       }
     },
