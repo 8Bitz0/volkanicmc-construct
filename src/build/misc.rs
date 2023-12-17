@@ -46,11 +46,16 @@ pub async fn get_remote_filename(url: &str) -> Option<String> {
     }
 }
 
+pub fn default_user_agent() -> String {
+    format!("8Bitz0/volkanicmc/{}", env!("CARGO_PKG_VERSION"))
+}
+
 pub async fn download_indicatif(
     store: vkstore::VolkanicStore,
     url: &str,
     verification: Verification,
     name: String,
+    user_agent: Option<String>,
 ) -> Result<path::PathBuf, DownloadError> {
     let p = store.downloads_path.join(&name);
 
@@ -70,7 +75,15 @@ pub async fn download_indicatif(
 
     let client = Client::new();
 
-    let response = client.get(url).send().await.map_err(DownloadError::Http)?;
+    let response = client
+        .get(url)
+        .header(
+            reqwest::header::USER_AGENT,
+            user_agent.unwrap_or(default_user_agent()),
+        )
+        .send()
+        .await
+        .map_err(DownloadError::Http)?;
 
     let content_length = response.content_length().unwrap_or(0);
     let pb = ProgressBar::new(content_length);

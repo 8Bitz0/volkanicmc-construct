@@ -40,6 +40,14 @@ pub enum GenericResource {
     Remote {
         /// URL of the remote file
         url: String,
+        /// Custom user agent to use for the download
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "user-agent")]
+        user_agent: Option<String>,
+        /// Optional name of the remote file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "override-name")]
+        override_name: Option<String>,
         /// Optional SHA-512 hash of the remote file for verification
         sha512: Option<String>,
         /// If the remote file is an archive, define the internal object to

@@ -36,6 +36,7 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
         &jdk.url,
         Verification::Sha256(jdk.sha256),
         jdk_name.clone(),
+        None,
     )
     .await
     .map_err(PrepareJdkError::Download)?;

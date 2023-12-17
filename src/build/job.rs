@@ -60,6 +60,10 @@ pub enum JobAction {
         archive: Option<template::resource::ArchiveInfo>,
         url: String,
         sha512: Option<String>,
+        #[serde(rename = "user-agent")]
+        user_agent: Option<String>,
+        #[serde(rename = "override-name")]
+        override_name: Option<String>,
     },
     /// Copy a file
     #[serde(rename = "from-include")]
@@ -109,6 +113,8 @@ impl JobAction {
                 archive,
                 url,
                 sha512,
+                user_agent,
+                override_name,
             } => {
                 let abs_path = store.build_path.join(template_path);
 
@@ -116,10 +122,17 @@ impl JobAction {
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 
-                let name = if let Some(name) = misc::get_remote_filename(url).await {
-                    name
-                } else {
-                    return Err(JobError::NoFileNameInPath(abs_path));
+                let name = {
+                    match override_name {
+                        Some(name) => name.clone(),
+                        None => {
+                            if let Some(name) = misc::get_remote_filename(url).await {
+                                name
+                            } else {
+                                return Err(JobError::NoFileNameInPath(abs_path));
+                            }
+                        }
+                    }
                 };
 
                 let p = misc::download_indicatif(
@@ -129,7 +142,8 @@ impl JobAction {
                         Some(sha512) => misc::Verification::Sha512(sha512.to_string()),
                         None => misc::Verification::None,
                     },
-                    name,
+                    name.to_string(),
+                    user_agent.clone(),
                 )
                 .map_err(JobError::Download)
                 .await?;
@@ -244,6 +258,8 @@ pub async fn create_jobs(
                 action: JobAction::WriteFileRemote {
                     path: resources::conf::SERVER_SOFTWARE_FILE.into(),
                     url: url.clone(),
+                    user_agent: None,
+                    override_name: None,
                     archive: None,
                     sha512: Some(sha512.clone()),
                 },
@@ -256,6 +272,8 @@ pub async fn create_jobs(
         match resource {
             template::resource::GenericResource::Remote {
                 url,
+                user_agent,
+                override_name,
                 sha512,
                 archive,
                 template_path: path,
@@ -265,6 +283,8 @@ pub async fn create_jobs(
                     action: JobAction::WriteFileRemote {
                         path: path.clone(),
                         url: url.clone(),
+                        user_agent: user_agent.clone(),
+                        override_name: override_name.clone(),
                         archive: archive.clone(),
                         sha512: sha512.clone(),
                     },
