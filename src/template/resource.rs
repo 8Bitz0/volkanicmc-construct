@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path;
 
+use crate::resources;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ModrinthProject {
     Id(String),
@@ -23,6 +25,14 @@ pub enum ServerExecResource {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub struct ArchiveInfo {
+    #[serde(rename = "internal-path")]
+    pub inner_path: path::PathBuf,
+    #[serde(rename = "format")]
+    pub archive_format: resources::ArchiveFormat,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum GenericResource {
     /// A remote file to download via provided URL
@@ -30,8 +40,20 @@ pub enum GenericResource {
     Remote {
         /// URL of the remote file
         url: String,
+        /// Custom user agent to use for the download
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "user-agent")]
+        user_agent: Option<String>,
+        /// Optional name of the remote file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "override-name")]
+        override_name: Option<String>,
         /// Optional SHA-512 hash of the remote file for verification
         sha512: Option<String>,
+        /// If the remote file is an archive, define the internal object to
+        /// extract and the archive format
+        #[serde(skip_serializing_if = "Option::is_none")]
+        archive: Option<ArchiveInfo>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,

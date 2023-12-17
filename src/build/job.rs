@@ -3,7 +3,7 @@ use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tokio::fs;
-use tracing::error;
+use tracing::{debug, error, info};
 
 use crate::resources::{self, Jdk, JdkConfig};
 use crate::template::{self, vkinclude};
@@ -19,10 +19,16 @@ pub enum JobError {
     JdkNotFound(String),
     #[error("Filesystem error: {0}")]
     Filesystem(tokio::io::Error),
+    #[error("Inner archive path doesn't exist: {0}")]
+    InnerArchivePathNotFound(path::PathBuf),
+    #[error("Extraction error: {0}")]
+    ExtractionError(misc::ExtractionError),
     #[error("No file name found in path: {0}")]
     NoFileNameInPath(path::PathBuf),
     #[error("Creating path ancestor directories failed: {0}")]
     CreateFilesystemAncestors(misc::CreateAncestorError),
+    #[error("Directory copy failed: {0}")]
+    DirectoryCopyFailed(path::PathBuf),
     #[error("Base64 error: {0}")]
     Base64(base64::DecodeError),
     #[error("Download error: {0}")]
@@ -50,8 +56,14 @@ pub enum JobAction {
     #[serde(rename = "download-file")]
     WriteFileRemote {
         path: path::PathBuf,
+        /// If format is not defined, the file is only copied and not decompressed.
+        archive: Option<template::resource::ArchiveInfo>,
         url: String,
         sha512: Option<String>,
+        #[serde(rename = "user-agent")]
+        user_agent: Option<String>,
+        #[serde(rename = "override-name")]
+        override_name: Option<String>,
     },
     /// Copy a file
     #[serde(rename = "from-include")]
@@ -98,8 +110,11 @@ impl JobAction {
             }
             JobAction::WriteFileRemote {
                 path: template_path,
+                archive,
                 url,
                 sha512,
+                user_agent,
+                override_name,
             } => {
                 let abs_path = store.build_path.join(template_path);
 
@@ -107,10 +122,17 @@ impl JobAction {
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 
-                let name = if let Some(name) = template_path.file_name() {
-                    name.to_string_lossy().to_string()
-                } else {
-                    return Err(JobError::NoFileNameInPath(abs_path));
+                let name = {
+                    match override_name {
+                        Some(name) => name.clone(),
+                        None => {
+                            if let Some(name) = misc::get_remote_filename(url).await {
+                                name
+                            } else {
+                                return Err(JobError::NoFileNameInPath(abs_path));
+                            }
+                        }
+                    }
                 };
 
                 let p = misc::download_indicatif(
@@ -120,12 +142,50 @@ impl JobAction {
                         Some(sha512) => misc::Verification::Sha512(sha512.to_string()),
                         None => misc::Verification::None,
                     },
-                    name,
+                    name.to_string(),
+                    user_agent.clone(),
                 )
                 .map_err(JobError::Download)
                 .await?;
 
-                fs::copy(p, abs_path).await.map_err(JobError::Filesystem)?;
+                match archive {
+                    Some(t) => {
+                        let archive_path =
+                            misc::extract(store.clone(), p, t.archive_format.clone())
+                                .await
+                                .map_err(JobError::ExtractionError)?;
+                        let a_path_inner = archive_path.join(t.inner_path.clone());
+
+                        match misc::fs_obj(a_path_inner.clone()) {
+                            misc::FsObjectType::Directory => {
+                                match copy_dir::copy_dir(&a_path_inner, &abs_path) {
+                                    Ok(_) => {
+                                        info!(
+                                            "Copied resource directory \"{}\" to \"{}\"",
+                                            a_path_inner.to_string_lossy(),
+                                            abs_path.to_string_lossy()
+                                        );
+                                    }
+                                    Err(e) => {
+                                        debug!("Errors ocurred during JDK copy: {:#?}", e);
+                                        return Err(JobError::DirectoryCopyFailed(a_path_inner));
+                                    }
+                                }
+                            }
+                            misc::FsObjectType::File => {
+                                fs::copy(&a_path_inner, &abs_path)
+                                    .await
+                                    .map_err(JobError::Filesystem)?;
+                            }
+                            misc::FsObjectType::None => {
+                                return Err(JobError::InnerArchivePathNotFound(a_path_inner))
+                            }
+                        }
+                    }
+                    None => {
+                        fs::copy(p, abs_path).await.map_err(JobError::Filesystem)?;
+                    }
+                }
             }
             JobAction::CopyFromInclude { id, template_path } => {
                 let abs_path = store.build_path.join(template_path);
@@ -198,6 +258,9 @@ pub async fn create_jobs(
                 action: JobAction::WriteFileRemote {
                     path: resources::conf::SERVER_SOFTWARE_FILE.into(),
                     url: url.clone(),
+                    user_agent: None,
+                    override_name: None,
+                    archive: None,
                     sha512: Some(sha512.clone()),
                 },
             });
@@ -209,7 +272,10 @@ pub async fn create_jobs(
         match resource {
             template::resource::GenericResource::Remote {
                 url,
+                user_agent,
+                override_name,
                 sha512,
+                archive,
                 template_path: path,
             } => {
                 jobs.push(Job {
@@ -217,6 +283,9 @@ pub async fn create_jobs(
                     action: JobAction::WriteFileRemote {
                         path: path.clone(),
                         url: url.clone(),
+                        user_agent: user_agent.clone(),
+                        override_name: override_name.clone(),
+                        archive: archive.clone(),
                         sha512: sha512.clone(),
                     },
                 });

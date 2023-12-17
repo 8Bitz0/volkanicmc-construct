@@ -21,23 +21,27 @@ pub enum PrepareJdkError {
     InvalidJdkHome(path::PathBuf),
     #[error("Directory failed to be copied: {0}")]
     DirectoryCopyFailed(path::PathBuf),
+    #[error("No name for URL: {0}")]
+    NoNameForUrl(String),
 }
 
 pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), PrepareJdkError> {
-    let jdk_name = get_remote_filename(&jdk.url).await;
+    let jdk_name = match get_remote_filename(&jdk.url).await {
+        Some(s) => s,
+        None => return Err(PrepareJdkError::NoNameForUrl(jdk.url.clone())),
+    };
 
     download_indicatif(
         store.clone(),
         &jdk.url,
         Verification::Sha256(jdk.sha256),
-        jdk_name,
+        jdk_name.clone(),
+        None,
     )
     .await
     .map_err(PrepareJdkError::Download)?;
 
-    let p = store
-        .downloads_path
-        .join(get_remote_filename(&jdk.url).await);
+    let p = store.downloads_path.join(jdk_name);
     let ex_path = extract(store.clone(), p, jdk.format)
         .await
         .map_err(PrepareJdkError::Extraction)?;
