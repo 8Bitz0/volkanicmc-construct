@@ -36,13 +36,13 @@ pub enum Verification {
     Sha512(String),
 }
 
-pub async fn get_remote_filename(url: &str) -> String {
+pub async fn get_remote_filename(url: &str) -> Option<String> {
     let split_url = url.split('/').collect::<Vec<&str>>();
 
     if split_url.len() < 2 {
-        "".to_string()
+        None
     } else {
-        split_url[split_url.len() - 1].to_string()
+        Some(split_url[split_url.len() - 1].to_string())
     }
 }
 
@@ -104,7 +104,7 @@ pub async fn download_indicatif(
         }
     }
 
-    pb.finish_with_message("Download complete");
+    pb.finish();
 
     if p.is_file() {
         if verify_hash(p.clone(), &verification).await? {
