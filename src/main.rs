@@ -44,6 +44,7 @@ async fn main() {
         println!("Debug logging enabled");
         tracing_subscriber::fmt()
             .event_format(tracing_subscriber::fmt::format().pretty())
+            .with_max_level(tracing::Level::DEBUG)
             .init();
     }
 
@@ -51,6 +52,7 @@ async fn main() {
     {
         tracing_subscriber::fmt()
             .event_format(tracing_subscriber::fmt::format().compact())
+            .with_max_level(tracing::Level::INFO)
             .init();
     }
 
