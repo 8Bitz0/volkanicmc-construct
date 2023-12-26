@@ -7,6 +7,7 @@ mod exec;
 mod hostinfo;
 mod resources;
 mod template;
+mod var;
 mod vkstore;
 
 #[derive(Debug, Parser)]

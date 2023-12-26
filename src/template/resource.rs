@@ -30,6 +30,9 @@ pub enum GenericResource {
     Remote {
         /// URL of the remote file
         url: String,
+        /// Whether to perform variable substitution
+        #[serde(rename = "variable-substitution")]
+        variable_substitution: bool,
         /// Optional SHA-512 hash of the remote file for verification
         sha512: Option<String>,
         /// Path the file should be written to inside the build
@@ -40,6 +43,9 @@ pub enum GenericResource {
     #[serde(rename = "base64")]
     Base64 {
         base64: String,
+        /// Whether to perform variable substitution
+        #[serde(rename = "variable-substitution")]
+        variable_substitution: bool,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
@@ -49,6 +55,9 @@ pub enum GenericResource {
     Include {
         #[serde(rename = "id")]
         include_id: String,
+        /// Whether to perform variable substitution
+        #[serde(rename = "variable-substitution")]
+        variable_substitution: bool,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,

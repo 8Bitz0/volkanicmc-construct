@@ -8,7 +8,7 @@ mod prepare_jdk;
 use crate::exec;
 use crate::hostinfo;
 use crate::resources::{self, JdkConfig};
-use crate::template;
+use crate::template::{self};
 use crate::vkstore;
 
 pub use buildinfo::{BuildInfo, BuildInfoError};
@@ -49,7 +49,7 @@ pub async fn build(
 
     let mut build_info = {
         if buildinfo::BuildInfo::exists(&store).await {
-            let mut build_info = buildinfo::BuildInfo::get(&store)
+            let build_info = buildinfo::BuildInfo::get(&store)
                 .await
                 .map_err(BuildError::BuildInfo)?;
 
@@ -65,24 +65,19 @@ pub async fn build(
             } else {
                 warn!("Incomplete build found. Rebuilding...");
             }
-
-            build_info.jobs = jobs;
-            store.renew().await.map_err(BuildError::Store)?;
-
-            build_info.set_path(&store);
-
-            build_info
-        } else {
-            let mut build_info = buildinfo::BuildInfo::new(&store)
-                .await
-                .map_err(BuildError::BuildInfo)?;
-
-            build_info.jobs = jobs;
-
-            store.renew().await.map_err(BuildError::Store)?;
-
-            build_info
         }
+
+        let mut build_info = buildinfo::BuildInfo::new(&store)
+            .await
+            .map_err(BuildError::BuildInfo)?;
+
+        build_info.variables = template.variables;
+
+        build_info.jobs = jobs;
+
+        store.renew().await.map_err(BuildError::Store)?;
+
+        build_info
     };
 
     let server_args: Option<Vec<String>> = match &template.server {
