@@ -20,7 +20,6 @@ pub async fn embed(template: Template) -> Result<Template, TemplateManagementErr
         match r {
             resource::GenericResource::Include {
                 include_id,
-                variable_substitution,
                 template_path,
             } => {
                 let include = vkinclude::VolkanicInclude::new().await;
@@ -61,7 +60,6 @@ pub async fn embed(template: Template) -> Result<Template, TemplateManagementErr
 
                 *r = resource::GenericResource::Base64 {
                     base64: base64_engine.encode(&f_contents),
-                    variable_substitution: *variable_substitution,
                     template_path: template_path.clone(),
                 };
             }

@@ -4,7 +4,6 @@ use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info, warn};
 
 use crate::exec;
-use crate::var;
 use crate::vkstore;
 
 use super::job;
@@ -27,7 +26,6 @@ pub struct BuildInfo {
     path: Option<path::PathBuf>,
     #[serde(skip, default)]
     pub stray: bool,
-    pub variables: Vec<var::Vars>,
     pub jobs: Vec<job::Job>,
     #[serde(rename = "job-progress")]
     pub job_progress: usize,

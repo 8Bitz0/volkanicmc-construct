@@ -2,12 +2,11 @@ use base64::Engine;
 use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
-use tokio::{fs, io::AsyncWriteExt};
-use tracing::{debug, info, error};
+use tokio::fs;
+use tracing::error;
 
 use crate::resources::{self, Jdk, JdkConfig};
 use crate::template::{self, vkinclude};
-use crate::var;
 use crate::vkstore;
 
 use super::buildinfo;
@@ -61,18 +60,13 @@ pub enum JobAction {
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
     },
-    /// Perform variable substitution
-    #[serde(rename = "variable-substitution")]
-    VariableSubstitution {
-        path: path::PathBuf,
-    },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
     PrepareJdk { jdk: Jdk },
 }
 
 impl JobAction {
-    pub async fn execute(&self, store: &vkstore::VolkanicStore, variables: Vec<var::Vars>) -> Result<(), JobError> {
+    pub async fn execute(&self, store: &vkstore::VolkanicStore) -> Result<(), JobError> {
         match self {
             JobAction::CreateDir {
                 path: template_path,
@@ -151,25 +145,6 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
             }
-            JobAction::VariableSubstitution { path: template_path } => {
-                let f_path_abs = store.build_path.join(template_path);
-                debug!("Absolute path for variable substitution: {}", f_path_abs.to_string_lossy());
-
-                let mut file_contents = fs::read_to_string(&f_path_abs)
-                    .await
-                    .map_err(JobError::Filesystem)?;
-
-                file_contents = var::string_replace(file_contents, variables);
-
-                info!("Adding variables to file: {}", f_path_abs.to_string_lossy());
-                let mut file = fs::File::create(&f_path_abs)
-                    .await
-                    .map_err(JobError::Filesystem)?;
-
-                file.write_all(file_contents.as_bytes())
-                    .await
-                    .map_err(JobError::Filesystem)?;
-            }
             JobAction::PrepareJdk { jdk } => {
                 prepare_jdk::prepare_jdk(store.clone(), jdk.clone())
                     .await
@@ -235,7 +210,6 @@ pub async fn create_jobs(
             template::resource::GenericResource::Remote {
                 url,
                 sha512,
-                variable_substitution,
                 template_path: path,
             } => {
                 jobs.push(Job {
@@ -246,17 +220,9 @@ pub async fn create_jobs(
                         sha512: sha512.clone(),
                     },
                 });
-
-                if *variable_substitution {
-                    jobs.push(Job {
-                        title: "Variable substitution".into(),
-                        action: JobAction::VariableSubstitution { path: path.clone() },
-                    })
-                }
             }
             template::resource::GenericResource::Base64 {
                 base64: base,
-                variable_substitution,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -266,17 +232,9 @@ pub async fn create_jobs(
                         contents: base.clone(),
                     },
                 });
-
-                if *variable_substitution {
-                    jobs.push(Job {
-                        title: "Variable substitution".into(),
-                        action: JobAction::VariableSubstitution { path: template_path.clone() },
-                    })
-                }
             }
             template::resource::GenericResource::Include {
                 include_id,
-                variable_substitution,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -286,13 +244,6 @@ pub async fn create_jobs(
                         template_path: template_path.clone(),
                     },
                 });
-
-                if *variable_substitution {
-                    jobs.push(Job {
-                        title: "Variable substitution".into(),
-                        action: JobAction::VariableSubstitution { path: template_path.clone() },
-                    })
-                }
             }
             template::resource::GenericResource::Modrinth { identity: _ } => todo!(),
         }
@@ -308,7 +259,7 @@ pub async fn execute_jobs(
     build_info.job_progress = 0;
 
     for job in &build_info.jobs {
-        job.action.execute(&store, build_info.variables.clone()).await?;
+        job.action.execute(&store).await?;
 
         build_info.job_progress += 1;
 
