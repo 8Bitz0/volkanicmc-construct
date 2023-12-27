@@ -5,6 +5,7 @@ pub mod manage;
 mod parse;
 pub mod resource;
 pub mod vkinclude;
+pub mod var;
 
 pub use parse::ParseError;
 
@@ -22,6 +23,8 @@ pub struct Template {
     pub author: Option<String>,
     /// Version of the template.
     pub version: Option<(u64, Option<u64>, Option<u64>)>,
+    /// Variables neccessary for the template.
+    pub variables: Vec<var::Var>,
     /// Server runtime software.
     pub runtime: resource::ServerRuntimeResource,
     /// Server software resource.
@@ -43,6 +46,12 @@ impl Default for Template {
             description: "Server running Minecraft 1.20.2 with PaperMC".into(),
             author: Some("Example".into()),
             version: Some((1, Some(0), Some(0))),
+            variables: vec![
+                var::Var::User {
+                    name: "PORT".into(),
+                    default: Some("25565".into()),
+                },
+            ],
             runtime: resource::ServerRuntimeResource::Jdk { version: "17".to_string() },
             server: resource::ServerExecResource::Java {
                 url: "https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/291/downloads/paper-1.20.2-291.jar".into(),
@@ -51,7 +60,8 @@ impl Default for Template {
             },
             resources: vec![
                 resource::GenericResource::Base64 {
-                    base64: "ZW5hYmxlLWpteC1tb25pdG9yaW5nPWZhbHNlCnJjb24ucG9ydD0yNTU3NQpsZXZlbC1zZWVkPQpnYW1lbW9kZT1zdXJ2aXZhbAplbmFibGUtY29tbWFuZC1ibG9jaz1mYWxzZQplbmFibGUtcXVlcnk9ZmFsc2UKZ2VuZXJhdG9yLXNldHRpbmdzPXt9CmVuZm9yY2Utc2VjdXJlLXByb2ZpbGU9dHJ1ZQpsZXZlbC1uYW1lPXdvcmxkCm1vdGQ9QSBNaW5lY3JhZnQgU2VydmVyCnF1ZXJ5LnBvcnQ9MjU1NjUKcHZwPXRydWUKZ2VuZXJhdGUtc3RydWN0dXJlcz10cnVlCm1heC1jaGFpbmVkLW5laWdoYm9yLXVwZGF0ZXM9MTAwMDAwMApkaWZmaWN1bHR5PWVhc3kKbmV0d29yay1jb21wcmVzc2lvbi10aHJlc2hvbGQ9MjU2Cm1heC10aWNrLXRpbWU9NjAwMDAKcmVxdWlyZS1yZXNvdXJjZS1wYWNrPWZhbHNlCnVzZS1uYXRpdmUtdHJhbnNwb3J0PXRydWUKbWF4LXBsYXllcnM9MjAKb25saW5lLW1vZGU9dHJ1ZQplbmFibGUtc3RhdHVzPXRydWUKYWxsb3ctZmxpZ2h0PWZhbHNlCmluaXRpYWwtZGlzYWJsZWQtcGFja3M9CmJyb2FkY2FzdC1yY29uLXRvLW9wcz10cnVlCnZpZXctZGlzdGFuY2U9MTAKc2VydmVyLWlwPQpyZXNvdXJjZS1wYWNrLXByb21wdD0KYWxsb3ctbmV0aGVyPXRydWUKc2VydmVyLXBvcnQ9MjU1NjUKZW5hYmxlLXJjb249ZmFsc2UKc3luYy1jaHVuay13cml0ZXM9dHJ1ZQpvcC1wZXJtaXNzaW9uLWxldmVsPTQKcHJldmVudC1wcm94eS1jb25uZWN0aW9ucz1mYWxzZQpoaWRlLW9ubGluZS1wbGF5ZXJzPWZhbHNlCnJlc291cmNlLXBhY2s9CmVudGl0eS1icm9hZGNhc3QtcmFuZ2UtcGVyY2VudGFnZT0xMDAKc2ltdWxhdGlvbi1kaXN0YW5jZT0xMApyY29uLnBhc3N3b3JkPQpwbGF5ZXItaWRsZS10aW1lb3V0PTAKZm9yY2UtZ2FtZW1vZGU9ZmFsc2UKcmF0ZS1saW1pdD0wCmhhcmRjb3JlPWZhbHNlCndoaXRlLWxpc3Q9ZmFsc2UKYnJvYWRjYXN0LWNvbnNvbGUtdG8tb3BzPXRydWUKc3Bhd24tbnBjcz10cnVlCnNwYXduLWFuaW1hbHM9dHJ1ZQpsb2ctaXBzPXRydWUKZnVuY3Rpb24tcGVybWlzc2lvbi1sZXZlbD0yCmluaXRpYWwtZW5hYmxlZC1wYWNrcz12YW5pbGxhCmxldmVsLXR5cGU9bWluZWNyYWZ0XDpub3JtYWwKdGV4dC1maWx0ZXJpbmctY29uZmlnPQpzcGF3bi1tb25zdGVycz10cnVlCmVuZm9yY2Utd2hpdGVsaXN0PWZhbHNlCnNwYXduLXByb3RlY3Rpb249MTYKcmVzb3VyY2UtcGFjay1zaGExPQptYXgtd29ybGQtc2l6ZT0yOTk5OTk4NA==".into(),
+                    base64: "IyBNaW5lY3JhZnQgc2VydmVyIHByb3BlcnRpZXMNCmVuYWJsZS1qbXgtbW9uaXRvcmluZz1mYWxzZQ0KcmNvbi5wb3J0PTI1NTc1DQpsZXZlbC1zZWVkPQ0KZ2FtZW1vZGU9c3Vydml2YWwNCmVuYWJsZS1jb21tYW5kLWJsb2NrPWZhbHNlDQplbmFibGUtcXVlcnk9ZmFsc2UNCmdlbmVyYXRvci1zZXR0aW5ncz17fQ0KZW5mb3JjZS1zZWN1cmUtcHJvZmlsZT1mYWxzZQ0KbGV2ZWwtbmFtZT13b3JsZA0KbW90ZD1BIE1pbmVjcmFmdCBTZXJ2ZXIsIG9uIFZvbGthbmljTUMNCnF1ZXJ5LnBvcnQ9MjU1NjUNCnB2cD10cnVlDQpnZW5lcmF0ZS1zdHJ1Y3R1cmVzPXRydWUNCm1heC1jaGFpbmVkLW5laWdoYm9yLXVwZGF0ZXM9MTAwMDAwMA0KZGlmZmljdWx0eT1ub3JtYWwNCm5ldHdvcmstY29tcHJlc3Npb24tdGhyZXNob2xkPTI1Ng0KbWF4LXRpY2stdGltZT02MDAwMA0KcmVxdWlyZS1yZXNvdXJjZS1wYWNrPWZhbHNlDQp1c2UtbmF0aXZlLXRyYW5zcG9ydD10cnVlDQptYXgtcGxheWVycz04DQpvbmxpbmUtbW9kZT10cnVlDQplbmFibGUtc3RhdHVzPXRydWUNCmFsbG93LWZsaWdodD1mYWxzZQ0KaW5pdGlhbC1kaXNhYmxlZC1wYWNrcz0NCmJyb2FkY2FzdC1yY29uLXRvLW9wcz10cnVlDQp2aWV3LWRpc3RhbmNlPTgNCnNlcnZlci1pcD0NCnJlc291cmNlLXBhY2stcHJvbXB0PQ0KYWxsb3ctbmV0aGVyPXRydWUNCnNlcnZlci1wb3J0PSR7UE9SVH0NCmVuYWJsZS1yY29uPWZhbHNlDQpzeW5jLWNodW5rLXdyaXRlcz10cnVlDQpvcC1wZXJtaXNzaW9uLWxldmVsPTQNCnByZXZlbnQtcHJveHktY29ubmVjdGlvbnM9ZmFsc2UNCmhpZGUtb25saW5lLXBsYXllcnM9ZmFsc2UNCnJlc291cmNlLXBhY2s9DQplbnRpdHktYnJvYWRjYXN0LXJhbmdlLXBlcmNlbnRhZ2U9MTAwDQpzaW11bGF0aW9uLWRpc3RhbmNlPTEwDQpyY29uLnBhc3N3b3JkPQ0KcGxheWVyLWlkbGUtdGltZW91dD0wDQpmb3JjZS1nYW1lbW9kZT1mYWxzZQ0KcmF0ZS1saW1pdD0wDQpoYXJkY29yZT1mYWxzZQ0Kd2hpdGUtbGlzdD1mYWxzZQ0KYnJvYWRjYXN0LWNvbnNvbGUtdG8tb3BzPXRydWUNCnNwYXduLW5wY3M9dHJ1ZQ0Kc3Bhd24tYW5pbWFscz10cnVlDQpsb2ctaXBzPXRydWUNCmZ1bmN0aW9uLXBlcm1pc3Npb24tbGV2ZWw9Mg0KaW5pdGlhbC1lbmFibGVkLXBhY2tzPXZhbmlsbGENCmxldmVsLXR5cGU9bWluZWNyYWZ0XDpub3JtYWwNCnRleHQtZmlsdGVyaW5nLWNvbmZpZz0NCnNwYXduLW1vbnN0ZXJzPXRydWUNCmVuZm9yY2Utd2hpdGVsaXN0PWZhbHNlDQpzcGF3bi1wcm90ZWN0aW9uPTE2DQpyZXNvdXJjZS1wYWNrLXNoYTE9DQptYXgtd29ybGQtc2l6ZT0yOTk5OTk4NA==".into(),
+                    use_variables: Some(var::VarFormat::DollarCurly),
                     template_path: "server.properties".into(),
                 }
             ],

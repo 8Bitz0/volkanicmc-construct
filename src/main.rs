@@ -21,6 +21,8 @@ enum Command {
         path: path::PathBuf,
         #[arg(short = 'f', long)]
         force: bool,
+        #[arg(short = 'v', long)]
+        user_vars: Vec<String>
     },
     Check {
         path: path::PathBuf,
@@ -43,7 +45,9 @@ async fn main() {
     {
         println!("Debug logging enabled");
         tracing_subscriber::fmt()
-            .event_format(tracing_subscriber::fmt::format().pretty())
+            .event_format(tracing_subscriber::fmt::format().compact())
+            .with_line_number(true)
+            .with_max_level(tracing::Level::DEBUG)
             .init();
     }
 
@@ -57,7 +61,7 @@ async fn main() {
     let args = Args::parse();
 
     match args.command {
-        Command::Build { path, force } => {
+        Command::Build { path, force, user_vars } => {
             let template = match template::Template::import(path).await {
                 Ok(template) => template,
                 Err(e) => {
@@ -75,7 +79,7 @@ async fn main() {
                 }
             };
 
-            match build::build(template, store, force).await {
+            match build::build(template, store, force, user_vars).await {
                 Ok(()) => {}
                 Err(e) => {
                     error!("Failed to build template: {}", e);
