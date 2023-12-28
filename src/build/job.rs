@@ -2,7 +2,7 @@ use base64::Engine;
 use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
-use tokio::fs;
+use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info};
 
 use crate::resources::{self, Jdk, JdkConfig};
@@ -39,6 +39,8 @@ pub enum JobError {
     BuildInfo(buildinfo::BuildInfoError),
     #[error("Not available in Volkanic include folder: {0}")]
     NotAvailableInIncludeFolder(String),
+    #[error("Archives cannot have variables (resource path: {0})")]
+    ArchivesCannotHaveVariables(path::PathBuf),
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -71,6 +73,11 @@ pub enum JobAction {
         id: String,
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
+    },
+    ProcessVariables {
+        path: path::PathBuf,
+        format: template::var::VarFormat,
+        variables: template::var::VarMap,
     },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
@@ -171,6 +178,31 @@ impl JobAction {
                                         return Err(JobError::DirectoryCopyFailed(a_path_inner));
                                     }
                                 }
+
+                                for p in &t.post_remove {
+                                    let abs_rm_path = abs_path.join(p);
+
+                                    match misc::fs_obj(abs_rm_path.clone()) {
+                                        misc::FsObjectType::Directory => {
+                                            info!(
+                                                "Remove post-removal directory: \"{}\"",
+                                                p.to_string_lossy()
+                                            );
+                                            fs::remove_dir_all(abs_rm_path)
+                                                .await
+                                                .map_err(JobError::Filesystem)?;
+                                        }
+                                        misc::FsObjectType::File => fs::remove_file(abs_rm_path)
+                                            .await
+                                            .map_err(JobError::Filesystem)?,
+                                        misc::FsObjectType::None => {
+                                            error!(
+                                                "Post-removal inner-archive path not found: {}",
+                                                p.to_string_lossy()
+                                            );
+                                        }
+                                    }
+                                }
                             }
                             misc::FsObjectType::File => {
                                 fs::copy(&a_path_inner, &abs_path)
@@ -205,6 +237,25 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
             }
+            JobAction::ProcessVariables {
+                path,
+                format,
+                variables,
+            } => {
+                let mut contents = fs::read_to_string(store.build_path.join(path))
+                    .await
+                    .map_err(JobError::Filesystem)?;
+
+                contents = template::var::string_replace(contents, variables, format.clone());
+
+                let mut f = fs::File::create(store.build_path.join(path))
+                    .await
+                    .map_err(JobError::Filesystem)?;
+
+                f.write_all(contents.as_bytes())
+                    .await
+                    .map_err(JobError::Filesystem)?;
+            }
             JobAction::PrepareJdk { jdk } => {
                 prepare_jdk::prepare_jdk(store.clone(), jdk.clone())
                     .await
@@ -225,6 +276,7 @@ pub struct Job {
 pub async fn create_jobs(
     template: &crate::template::Template,
     jdk_config: JdkConfig,
+    var_map: &template::var::VarMap,
 ) -> Result<Vec<Job>, JobError> {
     let mut jobs = vec![];
 
@@ -275,6 +327,7 @@ pub async fn create_jobs(
                 user_agent,
                 override_name,
                 sha512,
+                use_variables,
                 archive,
                 template_path: path,
             } => {
@@ -289,9 +342,32 @@ pub async fn create_jobs(
                         sha512: sha512.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    if archive.is_some() {
+                        error!("Variable substitution is not supported for archives");
+
+                        return Err(JobError::ArchivesCannotHaveVariables(
+                            override_name
+                                .clone()
+                                .unwrap_or(path.clone().to_string_lossy().to_string())
+                                .into(),
+                        ));
+                    }
+
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        },
+                    })
+                }
             }
             template::resource::GenericResource::Base64 {
                 base64: base,
+                use_variables,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -301,9 +377,21 @@ pub async fn create_jobs(
                         contents: base.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: template_path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        },
+                    })
+                }
             }
             template::resource::GenericResource::Include {
                 include_id,
+                use_variables,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -313,6 +401,17 @@ pub async fn create_jobs(
                         template_path: template_path.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: template_path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        },
+                    })
+                }
             }
             template::resource::GenericResource::Modrinth { identity: _ } => todo!(),
         }

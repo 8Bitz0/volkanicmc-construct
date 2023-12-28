@@ -3,6 +3,8 @@ use std::path;
 
 use crate::resources;
 
+use super::var::VarFormat;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ModrinthProject {
     Id(String),
@@ -31,6 +33,9 @@ pub struct ArchiveInfo {
     pub inner_path: path::PathBuf,
     #[serde(rename = "format")]
     pub archive_format: resources::ArchiveFormat,
+    /// Paths to remove after extraction (relative to the new directory)
+    #[serde(rename = "post-remove")]
+    pub post_remove: Vec<path::PathBuf>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -50,6 +55,10 @@ pub enum GenericResource {
         override_name: Option<String>,
         /// Optional SHA-512 hash of the remote file for verification
         sha512: Option<String>,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// If the remote file is an archive, define the internal object to
         /// extract and the archive format
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,6 +71,10 @@ pub enum GenericResource {
     #[serde(rename = "base64")]
     Base64 {
         base64: String,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
@@ -71,6 +84,10 @@ pub enum GenericResource {
     Include {
         #[serde(rename = "id")]
         include_id: String,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
