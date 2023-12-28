@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path;
 
+use super::var::VarFormat;
+
 use crate::resources;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -54,6 +56,10 @@ pub enum GenericResource {
         /// extract and the archive format
         #[serde(skip_serializing_if = "Option::is_none")]
         archive: Option<ArchiveInfo>,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
@@ -62,6 +68,10 @@ pub enum GenericResource {
     #[serde(rename = "base64")]
     Base64 {
         base64: String,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
@@ -71,6 +81,10 @@ pub enum GenericResource {
     Include {
         #[serde(rename = "id")]
         include_id: String,
+        /// Whether to use variables in the file
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "use-variables")]
+        use_variables: Option<VarFormat>,
         /// Path the file should be written to inside the build
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,

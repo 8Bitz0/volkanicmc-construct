@@ -9,6 +9,8 @@ pub enum ParseError {
     JsonParse(serde_jsonc::Error),
     #[error("Filesystem error: {0}")]
     Filesystem(tokio::io::Error),
+    #[error("Archive resource with variables is not supported: \"{0}\"")]
+    ArchiveVariables(String),
 }
 
 pub async fn json_to_template(path: path::PathBuf) -> Result<Template, ParseError> {

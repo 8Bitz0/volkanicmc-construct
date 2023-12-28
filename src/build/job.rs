@@ -2,7 +2,7 @@ use base64::Engine;
 use futures_util::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::path;
-use tokio::fs;
+use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info};
 
 use crate::resources::{self, Jdk, JdkConfig};
@@ -71,6 +71,11 @@ pub enum JobAction {
         id: String,
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
+    },
+    ProcessVariables {
+        path: path::PathBuf,
+        format: template::var::VarFormat,
+        variables: template::var::VarMap,
     },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
@@ -205,6 +210,25 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
             }
+            JobAction::ProcessVariables {
+                path,
+                format,
+                variables,
+            } => {
+                let mut contents = fs::read_to_string(store.build_path.join(path))
+                    .await
+                    .map_err(JobError::Filesystem)?;
+
+                contents = template::var::string_replace(contents, variables, format.clone());
+
+                let mut f = fs::File::create(store.build_path.join(path))
+                    .await
+                    .map_err(JobError::Filesystem)?;
+
+                f.write_all(contents.as_bytes())
+                    .await.
+                    map_err(JobError::Filesystem)?;
+            }
             JobAction::PrepareJdk { jdk } => {
                 prepare_jdk::prepare_jdk(store.clone(), jdk.clone())
                     .await
@@ -225,6 +249,7 @@ pub struct Job {
 pub async fn create_jobs(
     template: &crate::template::Template,
     jdk_config: JdkConfig,
+    var_map: &template::var::VarMap,
 ) -> Result<Vec<Job>, JobError> {
     let mut jobs = vec![];
 
@@ -276,6 +301,7 @@ pub async fn create_jobs(
                 override_name,
                 sha512,
                 archive,
+                use_variables,
                 template_path: path,
             } => {
                 jobs.push(Job {
@@ -289,9 +315,21 @@ pub async fn create_jobs(
                         sha512: sha512.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        }
+                    })
+                }
             }
             template::resource::GenericResource::Base64 {
                 base64: base,
+                use_variables,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -301,9 +339,21 @@ pub async fn create_jobs(
                         contents: base.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: template_path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        }
+                    })
+                }
             }
             template::resource::GenericResource::Include {
                 include_id,
+                use_variables,
                 template_path,
             } => {
                 jobs.push(Job {
@@ -313,6 +363,17 @@ pub async fn create_jobs(
                         template_path: template_path.clone(),
                     },
                 });
+
+                if let Some(use_variables) = use_variables {
+                    jobs.push(Job {
+                        title: "Perform variable substitution".into(),
+                        action: JobAction::ProcessVariables {
+                            path: template_path.clone(),
+                            format: use_variables.clone(),
+                            variables: var_map.clone(),
+                        }
+                    })
+                }
             }
             template::resource::GenericResource::Modrinth { identity: _ } => todo!(),
         }
