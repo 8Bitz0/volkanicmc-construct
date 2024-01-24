@@ -7,6 +7,26 @@
     0,
     0
   ],
+  "variables": [
+    {
+      "user": {
+        "name": "PORT",
+        "default": "25565"
+      }
+    },
+    {
+      "user": {
+        "name": "MC_RESOURCES",
+        "default": ""
+      }
+    },
+    {
+      "user": {
+        "name": "MC_RESOURCES_SHA1",
+        "default": ""
+      }
+    }
+  ],
   "runtime": {
     "jdk": {
       "version": "8"
@@ -23,6 +43,7 @@
     {
       "include": {
         "id": "1-8-vanilla.properties",
+        "use-variables": "dollar-curly",
         "template-path": "server.properties"
       }
     },

@@ -7,6 +7,25 @@
     0,
     0
   ],
+  "variables": [
+    {
+      "user": {
+        "name": "PORT",
+        "default": "25565"
+      }
+    },
+    {
+      "user": {
+        "name": "MC_RESOURCES"
+      }
+    },
+    {
+      "user": {
+        "name": "MC_RESOURCES_SHA1",
+        "default": ""
+      }
+    }
+  ],
   "runtime": {
     "jdk": {
       "version": "17"
@@ -30,6 +49,7 @@
     {
       "include": {
         "id": "1-20-paper.properties",
+        "use-variables": "dollar-curly",
         "template-path": "server.properties"
       }
     },

@@ -29,19 +29,47 @@ pub enum BuildError {
     Store(vkstore::StoreError),
     #[error("Build is already present")]
     BuildPresent,
+    #[error("Variable processing error: {0}")]
+    VarProcess(template::var::VarProcessError),
 }
 
 pub async fn build(
     template: template::Template,
     store: vkstore::VolkanicStore,
     force: bool,
+    user_vars_raw: Vec<String>,
 ) -> Result<(), BuildError> {
+    let mut user_vars = template::var::EnvMap::new();
+
+    for var in user_vars_raw {
+        let mut split = var.splitn(2, '=');
+        let name = split
+            .next()
+            .ok_or(BuildError::VarProcess(
+                template::var::VarProcessError::RawVarWithoutName,
+            ))?
+            .to_string();
+        let value = split
+            .next()
+            .ok_or(BuildError::VarProcess(
+                template::var::VarProcessError::RawVarWithoutValue,
+            ))?
+            .to_string();
+        user_vars.insert(name, value);
+    }
+
     let jdk_config = JdkConfig::parse_list()
         .await
         .map_err(BuildError::ResourceLoad)?;
 
+    info!("Creating template variables...");
+    let mut variables = template::var::VarMap::new();
+
+    template::var::process_vars(&mut variables, template.variables.clone(), &user_vars)
+        .map_err(BuildError::VarProcess)?;
+
     info!("Creating jobs...");
-    let jobs = job::create_jobs(&template, jdk_config)
+    let jobs = job::create_jobs(&template, jdk_config, &variables)
         .await
         .map_err(BuildError::Job)?;
 

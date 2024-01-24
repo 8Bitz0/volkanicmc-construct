@@ -7,6 +7,14 @@
     0,
     0
   ],
+  "variables": [
+    {
+      "user": {
+        "name": "PORT",
+        "default": "25565"
+      }
+    }
+  ],
   "runtime": {
     "jdk": {
       "version": "8"
@@ -23,6 +31,7 @@
     {
       "include": {
         "id": "b1-7-vanilla.properties",
+        "use-variables": "dollar-curly",
         "template-path": "server.properties"
       }
     },
