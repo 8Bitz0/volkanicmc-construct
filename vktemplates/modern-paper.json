@@ -16,7 +16,8 @@
     },
     {
       "user": {
-        "name": "MC_RESOURCES"
+        "name": "MC_RESOURCES",
+        "default": ""
       }
     },
     {
