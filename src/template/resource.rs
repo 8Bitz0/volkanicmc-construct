@@ -14,7 +14,13 @@ pub enum ModrinthProject {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ServerRuntimeResource {
     #[serde(rename = "jdk")]
-    Jdk { version: String },
+    Jdk {
+        version: String,
+        /// Adds additional JDK arguments
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "additional-args")]
+        additional_args: Option<Vec<String>>,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

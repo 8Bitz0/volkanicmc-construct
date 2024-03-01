@@ -140,7 +140,21 @@ pub async fn build(
         } else {
             return Err(BuildError::UnknownPlatform);
         },
-        runtime_args: vec![],
+        runtime_args: match &template.runtime {
+            template::resource::ServerRuntimeResource::Jdk {
+                version: _,
+                additional_args,
+            } => match additional_args.clone() {
+                Some(args) => {
+                    warn!(
+                        "Additional JDK arguments are in use (\"{}\")",
+                        args.join(" ")
+                    );
+                    args
+                }
+                None => vec![],
+            },
+        },
         runtime_exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
         server_args: match server_args {
             Some(args) => args,
