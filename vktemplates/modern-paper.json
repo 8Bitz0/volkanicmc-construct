@@ -1,6 +1,6 @@
 {
-  "name": "1.20.2 Paper",
-  "description": "Server running Minecraft 1.20.2 with PaperMC",
+  "name": "1.20.4 Paper",
+  "description": "Server running Minecraft 1.20.4 with PaperMC",
   "author": "VolkanicMC",
   "version": [
     1,
@@ -34,16 +34,16 @@
   },
   "server": {
     "java": {
-      "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/318/downloads/paper-1.20.2-318.jar",
-      "sha512": "93cc58ab048f2b2c6da1e0d71d98901fb39eb13f776f49baf87edfdb6d4d0d027df4cfdc6d03360843d50ef83b368962266e034b9bbd15baa18d4f0953960169",
+      "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/446/downloads/paper-1.20.4-446.jar",
+      "sha512": "cad7b08823d3c3f8811cc012826e2c3c1c4fae6e3464eaa863d90eb61bec5b264dbfadfc0e47b1b9e89701172a4b3e10e96d60ed45f86c4e285d45dc535e8165",
       "args": "-nogui"
     }
   },
   "resources": [
     {
       "remote": {
-        "url": "https://ci.lucko.me/job/spark/398/artifact/spark-bukkit/build/libs/spark-1.10.57-bukkit.jar",
-        "sha512": "af31d682860601e2b5c3ba04d48cb0d5659e2f4a6a47e1db3017c4f6ec3b971be55d2f82a0dfdb27afcbc713be1b72526ec10f7397537ae3fb233866a781b176",
+        "url": "https://ci.lucko.me/job/spark/401/artifact/spark-bukkit/build/libs/spark-1.10.60-bukkit.jar",
+        "sha512": "6bf63ea37bb4a965a451668b6c36a79e846bb83f269aa589be1fe3fc9e78fda6f77ca3a78a057a63891a818ec962c961f0f00adce398cde91aae49e69f45b5e9",
         "template-path": "plugins/spark.jar"
       }
     },
