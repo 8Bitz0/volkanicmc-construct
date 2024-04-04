@@ -8,7 +8,7 @@ mod prepare_jdk;
 use crate::exec;
 use crate::hostinfo;
 use crate::resources::{self, JdkConfig};
-use crate::template;
+use crate::template::{self, jdk_args::JdkArguments};
 use crate::vkstore;
 
 pub use buildinfo::{BuildInfo, BuildInfoError};
@@ -31,6 +31,8 @@ pub enum BuildError {
     BuildPresent,
     #[error("Variable processing error: {0}")]
     VarProcess(template::var::VarProcessError),
+    #[error("Custom arguments in use")]
+    CustomArgumentsInUse,
 }
 
 pub async fn build(
@@ -38,6 +40,8 @@ pub async fn build(
     store: vkstore::VolkanicStore,
     force: bool,
     user_vars_raw: Vec<String>,
+    allow_custom_jvm_args: bool,
+    additional_jvm_args: Vec<String>,
 ) -> Result<(), BuildError> {
     let mut user_vars = template::var::EnvMap::new();
 
@@ -140,7 +144,50 @@ pub async fn build(
         } else {
             return Err(BuildError::UnknownPlatform);
         },
-        runtime_args: vec![],
+        runtime_args: match &template.runtime {
+            template::resource::ServerRuntimeResource::Jdk {
+                version: _,
+                additional_args,
+            } => {
+                if !additional_jvm_args.is_empty() {
+                    warn!(
+                        "Additional user JVM arguments are in use (\"{}\")",
+                        additional_jvm_args.join(" ")
+                    );
+                }
+
+                match additional_args.clone() {
+                    Some(args) => {
+                        let mut raw_args = additional_jvm_args;
+
+                        raw_args.extend(match args {
+                            JdkArguments::Custom(a) => {
+                                if !allow_custom_jvm_args {
+                                    error!("This template uses custom JVM arguments (which may be dangerous). Please use the \"--allow-custom-jvm-args\" flag to build anyway.");
+                                    return Err(BuildError::CustomArgumentsInUse);
+                                }
+
+                                warn!(
+                                    "Additional template JVM arguments are in use (\"{}\")",
+                                    a.join(" ")
+                                );
+
+                                a
+                            },
+                            JdkArguments::Preset(p) => {
+                                info!("Template has requested a JVM argument preset");
+                                debug!("Template JVM argument preset: {}", p.get_args().join(" "));
+
+                                p.get_args()
+                            },
+                        });
+
+                        raw_args
+                    }
+                    None => additional_jvm_args,
+                }
+            }
+        },
         runtime_exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
         server_args: match server_args {
             Some(args) => args,

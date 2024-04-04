@@ -282,7 +282,10 @@ pub async fn create_jobs(
 
     // Setup JDK
     match &template.runtime {
-        template::resource::ServerRuntimeResource::Jdk { version } => {
+        template::resource::ServerRuntimeResource::Jdk {
+            version,
+            additional_args: _,
+        } => {
             jobs.push(Job {
                 title: "Prepare JDK".into(),
                 action: JobAction::PrepareJdk {
