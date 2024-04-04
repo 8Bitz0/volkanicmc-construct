@@ -3,7 +3,7 @@ use std::path;
 
 use crate::resources;
 
-use super::var::VarFormat;
+use super::{jdk_args::JdkArguments, var::VarFormat};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ModrinthProject {
@@ -19,7 +19,7 @@ pub enum ServerRuntimeResource {
         /// Adds additional JDK arguments
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(rename = "additional-args")]
-        additional_args: Option<Vec<String>>,
+        additional_args: Option<JdkArguments>,
     },
 }
 

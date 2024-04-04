@@ -29,7 +29,10 @@
   ],
   "runtime": {
     "jdk": {
-      "version": "17"
+      "version": "17",
+      "additional-args": {
+        "preset": "aikars"
+      }
     }
   },
   "server": {
