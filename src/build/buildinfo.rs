@@ -4,6 +4,7 @@ use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info, warn};
 
 use crate::exec;
+use crate::template;
 use crate::vkstore;
 
 use super::job;
@@ -26,6 +27,8 @@ pub struct BuildInfo {
     path: Option<path::PathBuf>,
     #[serde(skip, default)]
     pub stray: bool,
+    pub template: template::Template,
+    #[serde(skip)]
     pub jobs: Vec<job::Job>,
     #[serde(rename = "job-progress")]
     pub job_progress: usize,
@@ -45,8 +48,15 @@ impl BuildInfo {
 
         serde_jsonc::from_str::<BuildInfo>(&f_contents).map_err(BuildInfoError::JsonParse)
     }
-    pub async fn new(store: &vkstore::VolkanicStore) -> Result<BuildInfo, BuildInfoError> {
-        let mut build_info = BuildInfo::default();
+    pub async fn new(
+        store: &vkstore::VolkanicStore,
+        template: template::Template,
+    ) -> Result<BuildInfo, BuildInfoError> {
+        let mut build_info = BuildInfo {
+            template,
+            // Populate the rest of the `BuildInfo` struct with the default values
+            ..Default::default()
+        };
 
         build_info.set_path(store);
 
@@ -65,7 +75,7 @@ impl BuildInfo {
 
                 match f
                     .write_all(
-                        match serde_jsonc::to_string_pretty(&self) {
+                        match serde_jsonc::to_string(&self) {
                             Ok(s) => s,
                             Err(e) => {
                                 error!("Failed to serialize build info file: {}", e);
