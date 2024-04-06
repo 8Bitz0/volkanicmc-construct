@@ -105,7 +105,7 @@ pub async fn build(
 
             build_info
         } else {
-            let mut build_info = buildinfo::BuildInfo::new(&store)
+            let mut build_info = buildinfo::BuildInfo::new(&store, template.clone())
                 .await
                 .map_err(BuildError::BuildInfo)?;
 
