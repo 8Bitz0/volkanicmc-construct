@@ -37,6 +37,8 @@ enum Command {
     #[command(subcommand)]
     Template(TemplateCommand),
     Create,
+    /// Create a Bash script from the execution information of an existing build
+    ExecScript,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -178,5 +180,39 @@ async fn main() {
                 };
             }
         },
+        Command::ExecScript => {
+            let store = match vkstore::VolkanicStore::init().await {
+                Ok(store) => store,
+                Err(e) => {
+                    error!("Failed to initialize store: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            if !build::BuildInfo::exists(&store).await {
+                error!("No build info found");
+            }
+
+            let build_info = match build::BuildInfo::get(&store).await {
+                Ok(build_info) => build_info,
+                Err(e) => {
+                    error!("Failed to initialize build info: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            let exec_info = match build_info.exec {
+                Some(exec_info) => exec_info,
+                None => {
+                    error!("No execution info provided in build info file");
+                    std::process::exit(1);
+                }
+            };
+
+            println!(
+                "{}",
+                crate::exec::script::to_script(exec_info, store.build_path)
+            );
+        }
     }
 }

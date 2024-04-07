@@ -1,0 +1,49 @@
+FROM docker.io/library/ubuntu:jammy AS build
+
+ARG DEBIAN_FRONTEND="noninteractive"
+
+RUN apt-get update --quiet --option Dir::Etc::SourceParts="" && \
+    apt-get install --yes --quiet --option Dir::Etc::SourceParts="" \
+      bash \
+      ca-certificates \
+      curl \
+      wget \
+      make \
+      gcc \
+      g++ && \
+    # Delete package cache to avoid consuming space in layer
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app/build
+
+COPY ./src ./src
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./Cargo.lock ./Cargo.lock
+
+# Install Rust using Rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --no-modify-path
+
+# Set the default Rust environment
+ENV PATH="${PATH}:/root/.cargo/bin"
+
+RUN cargo build --profile release
+
+
+FROM docker.io/library/ubuntu:jammy AS final
+
+WORKDIR /app
+
+COPY ./containers/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Add user `volkanic` so no construct builds run as root
+RUN useradd -ms /bin/bash volkanic
+
+RUN chown -R volkanic:volkanic /app
+
+COPY --from=build /app/build/target/release/volkanicmc-construct /home/volkanic/.local/bin/volkanicmc-construct
+
+USER volkanic
+
+ENTRYPOINT [ "/entrypoint.sh" ]

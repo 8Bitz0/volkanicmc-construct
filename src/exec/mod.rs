@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use crate::hostinfo;
 
+pub mod script;
+
 mod run;
 
 pub use run::run;

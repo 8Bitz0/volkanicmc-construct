@@ -1,0 +1,53 @@
+FROM docker.io/library/alpine:3.19 AS build
+
+RUN apk add -q \
+      bash \
+      ca-certificates \
+      curl \
+      wget \
+      make \
+      gcc \
+      g++ && \
+    # Delete package cache to avoid consuming space in layer
+    apk cache clean
+
+WORKDIR /app/build
+
+COPY ./src ./src
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./Cargo.lock ./Cargo.lock
+
+# Install Rust using Rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --no-modify-path
+
+# Set the default Rust environment
+ENV PATH="${PATH}:/root/.cargo/bin"
+
+RUN cargo build --profile release
+
+
+FROM docker.io/library/alpine:3.19 AS final
+
+RUN apk add -q \
+      bash \
+      ca-certificates \
+      curl \
+      wget && \
+    # Delete package cache to avoid consuming space in layer
+    apk cache clean
+
+WORKDIR /app
+
+COPY ./containers/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Add user `volkanic` so no construct builds run as root
+RUN adduser -Dh /home/volkanic -s /bin/bash volkanic
+
+RUN chown -R volkanic:volkanic /app
+
+COPY --from=build /app/build/target/release/volkanicmc-construct /home/volkanic/.local/bin/volkanicmc-construct
+
+USER volkanic
+
+ENTRYPOINT [ "/entrypoint.sh" ]
