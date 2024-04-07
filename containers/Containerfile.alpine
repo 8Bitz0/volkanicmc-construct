@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:latest AS build
+FROM docker.io/library/alpine:3.19 AS build
 
 RUN apk add -q \
       bash \
@@ -26,7 +26,7 @@ ENV PATH="${PATH}:/root/.cargo/bin"
 RUN cargo build --profile release
 
 
-FROM docker.io/library/alpine:latest AS final
+FROM docker.io/library/alpine:3.19 AS final
 
 RUN apk add -q \
       bash \
