@@ -25,7 +25,7 @@ jobs:
 
           - name: 'Build and Push Docker Images'
             run: |
-              docker build -t ghcr.io/8Bitz0/volkanicmc-construct:latest --target final -f ./containers/Containerfile.alpine .
-              docker push ghcr.io/8Bitz0/volkanicmc-construct:latest
-              docker build -t ghcr.io/8Bitz0/volkanicmc-construct:ubuntu --target final -f ./containers/Containerfile.ubuntu .
-              docker push ghcr.io/8Bitz0/volkanicmc-construct:ubuntu
+              docker build -t ghcr.io/8Bitz0/vkconstruct:latest --target final -f ./containers/Containerfile.alpine .
+              docker push ghcr.io/8Bitz0/vkconstruct:latest
+              docker build -t ghcr.io/8Bitz0/vkconstruct:ubuntu --target final -f ./containers/Containerfile.ubuntu .
+              docker push ghcr.io/8Bitz0/vkconstruct:ubuntu
