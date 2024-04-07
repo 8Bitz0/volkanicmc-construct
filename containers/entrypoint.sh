@@ -19,7 +19,11 @@ fi
 
 if [[ $VK_TEMPLATE_BASE64 != "" ]]; then
     echo "Writing template from provided base64"
-    echo $(echo $VK_TEMPLATE_BASE64 | base64 --decode) > template.json
+    if [ -f /etc/os-release ] && grep -q 'ID=alpine' /etc/os-release; then
+        echo $(echo $VK_TEMPLATE_BASE64 | base64 -d) > template.json
+    else
+        echo $(echo $VK_TEMPLATE_BASE64 | base64 --decode) > template.json
+    fi
 elif [[ $VK_TEMPLATE_URL != "" ]]; then
     echo "Writing template from provided URL"
     wget -O template.json $VK_TEMPLATE_URL
