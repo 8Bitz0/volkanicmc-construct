@@ -32,7 +32,8 @@ RUN apk add -q \
       bash \
       ca-certificates \
       curl \
-      wget && \
+      wget \
+      libstdc++ && \
     # Delete package cache to avoid consuming space in layer
     apk cache clean
 
