@@ -32,8 +32,8 @@ jobs:
           - name: 'Build and Push Docker Images'
             run: |
               docker buildx build --platform linux/amd64,linux/arm64 \
-                -t ghcr.io/8Bitz0/vkconstruct:latest \
-                -t ghcr.io/8Bitz0/vkconstruct:ubuntu \
+                -t ghcr.io/8bitz0/vkconstruct:latest \
+                -t ghcr.io/8bitz0/vkconstruct:ubuntu \
                 -f ./containers/Containerfile.alpine \
                 -f ./containers/Containerfile.ubuntu --push \
                 .
