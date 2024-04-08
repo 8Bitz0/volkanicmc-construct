@@ -35,6 +35,6 @@ jobs:
                 -t ghcr.io/8bitz0/vkconstruct:latest \
                 -t ghcr.io/8bitz0/vkconstruct:ubuntu \
                 -f ./containers/Containerfile.alpine \
-                -f ./containers/Containerfile.ubuntu
+                -f ./containers/Containerfile.ubuntu \
                 --push \
                 .
