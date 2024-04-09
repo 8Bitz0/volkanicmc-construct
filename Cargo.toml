@@ -1,9 +1,14 @@
 [package]
 name = "volkanicmc-construct"
 version = "0.1.0"
+authors = ["Alexander Hansen <alex@bitzmc.com>"]
 edition = "2021"
+description = "Setup Minecraft servers by description"
+repository = "https://github.com/8Bitz0/volkanicmc-construct"
+license = "AGPL-3.0-or-later"
+keywords = ["minecraft"]
+categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 base64 = "0.21.5"
@@ -37,3 +42,6 @@ strip = true
 opt-level = "z"
 lto = true
 panic = "abort"
+
+[package.metadata.deb]
+
