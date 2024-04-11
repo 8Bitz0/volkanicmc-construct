@@ -11,8 +11,12 @@ mod parse;
 
 pub use parse::ParseError;
 
+pub const TEMPLATE_FORMAT: usize = 1;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Template {
+    #[serde(rename = "template-format")]
+    pub template_format: usize,
     /// Name of the template. The name should briefly describe and identify the template.
     ///
     /// Example: "1.12.2 Vanilla"
@@ -44,6 +48,7 @@ impl Template {
 impl Default for Template {
     fn default() -> Self {
         Self {
+            template_format: TEMPLATE_FORMAT,
             name: "1.20.2 Paper".into(),
             description: "Server running Minecraft 1.20.2 with PaperMC".into(),
             author: Some("Example".into()),
