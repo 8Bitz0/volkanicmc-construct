@@ -50,14 +50,18 @@ pub fn default_user_agent() -> String {
     format!("8Bitz0/volkanicmc/{}", env!("CARGO_PKG_VERSION"))
 }
 
-pub async fn download_indicatif(
+pub async fn download_progress(
     store: vkstore::VolkanicStore,
     url: &str,
     verification: Verification,
     name: String,
     user_agent: Option<String>,
 ) -> Result<path::PathBuf, DownloadError> {
-    let p = store.downloads_path.join(&name);
+    let p = store.downloads_path.join(match &verification {
+        Verification::None => &name,
+        Verification::Sha256(sha256) => sha256,
+        Verification::Sha512(sha512) => sha512,
+    });
 
     if p.is_dir() {
         return Err(DownloadError::DirectoryAlreadyExists(p));

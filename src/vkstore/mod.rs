@@ -52,6 +52,10 @@ impl VolkanicStore {
 
         Ok(())
     }
+    pub async fn exists() -> bool {
+        path::Path::new(VKSTORE_PATH).is_dir()
+    }
+    /// Creates a new `VolkanicStore` and creates all necessary subdirectories
     pub async fn init() -> Result<Self, StoreError> {
         let store = Self {
             path: path::PathBuf::from(VKSTORE_PATH),
@@ -65,6 +69,7 @@ impl VolkanicStore {
 
         Ok(store)
     }
+    /// Removes temporary files which shouldn't persist across runs
     pub async fn clean(&self) -> Result<(), StoreError> {
         let to_remove = [&self.temp_path];
 
@@ -76,6 +81,21 @@ impl VolkanicStore {
 
         Ok(())
     }
+    /// Removes all downloaded files
+    pub async fn clear_downloads(&self) -> Result<(), StoreError> {
+        let to_remove = [&self.downloads_path, &self.temp_path];
+
+        for dir in to_remove {
+            if dir.is_dir() {
+                fs::remove_dir_all(dir)
+                    .await
+                    .map_err(StoreError::Filesystem)?;
+            }
+        }
+
+        Ok(())
+    }
+    /// Removes all build and runtime files
     pub async fn renew(&self) -> Result<(), StoreError> {
         let to_clear = [&self.build_path, &self.runtime_path];
 
