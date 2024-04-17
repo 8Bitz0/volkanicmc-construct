@@ -98,7 +98,9 @@ impl JobAction {
                 path: template_path,
                 contents,
             } => {
-                misc::create_ancestors(template_path.clone())
+                let abs_path = store.build_path.join(template_path);
+
+                misc::create_ancestors(abs_path.clone())
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 
@@ -142,7 +144,7 @@ impl JobAction {
                     }
                 };
 
-                let p = misc::download_indicatif(
+                let p = misc::download_progress(
                     store.clone(),
                     url,
                     match sha512 {

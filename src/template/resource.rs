@@ -60,6 +60,7 @@ pub enum GenericResource {
         #[serde(rename = "override-name")]
         override_name: Option<String>,
         /// Optional SHA-512 hash of the remote file for verification
+        #[serde(skip_serializing_if = "Option::is_none")]
         sha512: Option<String>,
         /// Whether to use variables in the file
         #[serde(skip_serializing_if = "Option::is_none")]

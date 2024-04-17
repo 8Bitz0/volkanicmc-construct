@@ -17,6 +17,7 @@ struct Args {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Build in the current directory using a template from the given path
     Build {
         path: path::PathBuf,
         #[arg(short = 'f', long)]
@@ -30,21 +31,24 @@ enum Command {
         #[arg(short = 'j', long, value_parser, num_args = 1.., value_delimiter = ' ')]
         additional_jvm_args: Vec<String>,
     },
-    Check {
-        path: path::PathBuf,
-    },
+    /// Parse a template at the given path
+    Check { path: path::PathBuf },
+    /// Runs the build in the current directory. Only use for testing with trusted templates. Do not use for execution in production.
     Run,
     #[command(subcommand)]
     Template(TemplateCommand),
-    Create,
     /// Create a Bash script from the execution information of an existing build
     ExecScript,
+    /// Clear downloads and temporary files
+    Clean,
 }
 
 #[derive(Debug, Clone, Subcommand)]
 enum TemplateCommand {
     /// Moves all external "include" files into template
     Embed { path: path::PathBuf },
+    /// Prints a basic template
+    Create,
 }
 
 #[tokio::main]
@@ -121,18 +125,6 @@ async fn main() {
             };
             info!("Template \"{}\" parsed correctly", template.name);
         }
-        Command::Create => {
-            println!(
-                "{}",
-                match serde_jsonc::to_string_pretty(&template::Template::default()) {
-                    Ok(json) => json,
-                    Err(e) => {
-                        error!("Failed to serialize template: {}", e);
-                        std::process::exit(1);
-                    }
-                }
-            );
-        }
         Command::Run => {
             let store = match vkstore::VolkanicStore::init().await {
                 Ok(store) => store,
@@ -179,6 +171,18 @@ async fn main() {
                     }
                 };
             }
+            TemplateCommand::Create => {
+                println!(
+                    "{}",
+                    match serde_jsonc::to_string_pretty(&template::Template::default()) {
+                        Ok(json) => json,
+                        Err(e) => {
+                            error!("Failed to serialize template: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                );
+            }
         },
         Command::ExecScript => {
             let store = match vkstore::VolkanicStore::init().await {
@@ -213,6 +217,28 @@ async fn main() {
                 "{}",
                 crate::exec::script::to_script(exec_info, store.build_path)
             );
+        }
+        Command::Clean => {
+            if vkstore::VolkanicStore::exists().await {
+                let store = match vkstore::VolkanicStore::init().await {
+                    Ok(store) => store,
+                    Err(e) => {
+                        error!("Failed to initialize store: {}", e);
+                        std::process::exit(1);
+                    }
+                };
+
+                match vkstore::VolkanicStore::clear_downloads(&store).await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        error!("Failed to clean store: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                error!("No store found");
+                std::process::exit(1);
+            }
         }
     }
 }
