@@ -58,7 +58,7 @@ impl BuildInfo {
             ..Default::default()
         };
 
-        build_info.set_path(store);
+        build_info.set_path(store).await;
 
         build_info.update().await?;
 
@@ -102,7 +102,7 @@ impl BuildInfo {
 
         Ok(())
     }
-    pub fn set_path(&mut self, store: &vkstore::VolkanicStore) {
+    pub async fn set_path(&mut self, store: &vkstore::VolkanicStore) {
         self.path = Some(store.path.join(BUILD_INFO_SUFFIX));
     }
 }

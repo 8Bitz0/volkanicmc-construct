@@ -24,7 +24,7 @@ pub enum VarFormat {
 }
 
 impl VarFormat {
-    pub fn formatted(&self, name: impl std::fmt::Display) -> String {
+    pub async fn formatted(&self, name: impl std::fmt::Display) -> String {
         let fmtd = match self {
             VarFormat::DollarCurly => format!("${{{}}}", name),
         };
@@ -45,10 +45,10 @@ pub enum VarProcessError {
     RawVarWithoutValue,
 }
 
-pub fn string_replace(value: String, vars: &VarMap, format: VarFormat) -> String {
+pub async fn string_replace(value: String, vars: &VarMap, format: VarFormat) -> String {
     let mut result = value;
     for v in vars {
-        let fmtd = format.formatted(v.0);
+        let fmtd = format.formatted(v.0).await;
 
         debug!("Replacing all instances of \"{}\" with \"{}\"", fmtd, v.1);
         result = result.replace(&fmtd, v.1);
@@ -56,7 +56,7 @@ pub fn string_replace(value: String, vars: &VarMap, format: VarFormat) -> String
     result
 }
 
-pub fn process_vars(
+pub async fn process_vars(
     template_vars: &mut VarMap,
     vars: Vec<Var>,
     env_defs: &EnvMap,

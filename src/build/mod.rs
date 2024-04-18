@@ -70,6 +70,7 @@ pub async fn build(
     let mut variables = template::var::VarMap::new();
 
     template::var::process_vars(&mut variables, template.variables.clone(), &user_vars)
+        .await
         .map_err(BuildError::VarProcess)?;
 
     info!("Creating jobs...");
@@ -101,7 +102,7 @@ pub async fn build(
             build_info.jobs = jobs;
             store.renew().await.map_err(BuildError::Store)?;
 
-            build_info.set_path(&store);
+            build_info.set_path(&store).await;
 
             build_info
         } else {
@@ -134,12 +135,12 @@ pub async fn build(
     debug!("Setting build execution info");
 
     build_info.exec = Some(exec::BuildExecInfo {
-        arch: if let Some(a) = hostinfo::Arch::get() {
+        arch: if let Some(a) = hostinfo::Arch::get().await {
             a
         } else {
             return Err(BuildError::UnknownArchitecture);
         },
-        os: if let Some(a) = hostinfo::Os::get() {
+        os: if let Some(a) = hostinfo::Os::get().await {
             a
         } else {
             return Err(BuildError::UnknownPlatform);
@@ -176,9 +177,9 @@ pub async fn build(
                             },
                             JdkArguments::Preset(p) => {
                                 info!("Template has requested a JVM argument preset");
-                                debug!("Template JVM argument preset: {}", p.get_args().join(" "));
+                                debug!("Template JVM argument preset: {}", p.get_args().await.join(" "));
 
-                                p.get_args()
+                                p.get_args().await
                             },
                         });
 

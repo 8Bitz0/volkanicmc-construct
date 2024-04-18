@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use clap::{Parser, Subcommand};
 use std::path;
 use tracing::{error, info};
@@ -215,7 +217,7 @@ async fn main() {
 
             println!(
                 "{}",
-                crate::exec::script::to_script(exec_info, store.build_path)
+                crate::exec::script::to_script(exec_info, store.build_path).await
             );
         }
         Command::Clean => {

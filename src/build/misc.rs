@@ -46,7 +46,7 @@ pub async fn get_remote_filename(url: &str) -> Option<String> {
     }
 }
 
-pub fn default_user_agent() -> String {
+pub async fn default_user_agent() -> String {
     format!("8Bitz0/volkanicmc/{}", env!("CARGO_PKG_VERSION"))
 }
 
@@ -83,7 +83,7 @@ pub async fn download_progress(
         .get(url)
         .header(
             reqwest::header::USER_AGENT,
-            user_agent.unwrap_or(default_user_agent()),
+            user_agent.unwrap_or(default_user_agent().await),
         )
         .send()
         .await
@@ -274,7 +274,7 @@ impl std::fmt::Display for FsObjectType {
     }
 }
 
-pub fn fs_obj(path: path::PathBuf) -> FsObjectType {
+pub async fn fs_obj(path: path::PathBuf) -> FsObjectType {
     if path.is_file() {
         FsObjectType::File
     } else if path.is_dir() {
@@ -298,7 +298,7 @@ pub async fn create_ancestors(path: path::PathBuf) -> Result<(), CreateAncestorE
     debug!("Creating ancestors for \"{}\"", path.to_string_lossy());
     if let Some(parent) = path.clone().parent() {
         debug!("Direct parent path: \"{}\"", parent.to_string_lossy());
-        match fs_obj(path.clone()) {
+        match fs_obj(path.clone()).await {
             FsObjectType::Directory => {
                 debug!("Ancestors already exist for \"{}\"", path.to_string_lossy());
                 Ok(())
@@ -315,7 +315,7 @@ pub async fn create_ancestors(path: path::PathBuf) -> Result<(), CreateAncestorE
                 Err(CreateAncestorError::WrongFsObject(
                     path.clone(),
                     FsObjectType::Directory,
-                    fs_obj(path),
+                    fs_obj(path).await,
                 ))
             }
         }

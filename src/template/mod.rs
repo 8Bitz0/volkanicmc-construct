@@ -41,7 +41,7 @@ pub struct Template {
 
 impl Template {
     pub async fn import(file: path::PathBuf) -> Result<Self, ParseError> {
-        parse::json_to_template(file).await
+        parse::file_to_template(file).await
     }
 }
 

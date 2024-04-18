@@ -112,7 +112,7 @@ impl<'de> Deserialize<'de> for Arch {
 }
 
 impl Os {
-    pub fn get() -> Option<Os> {
+    pub async fn get() -> Option<Os> {
         Some(match std::env::consts::OS {
             "android" => Os::Android,
             "freebsd" => Os::FreeBsd,
@@ -138,7 +138,7 @@ impl Os {
 }
 
 impl Arch {
-    pub fn get() -> Option<Arch> {
+    pub async fn get() -> Option<Arch> {
         Some(match std::env::consts::ARCH {
             "x86" => Arch::X86,
             "x86_64" => Arch::Amd64,
