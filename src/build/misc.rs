@@ -58,9 +58,9 @@ pub async fn download_progress(
     user_agent: Option<String>,
 ) -> Result<path::PathBuf, DownloadError> {
     let p = store.downloads_path.join(match &verification {
-        Verification::None => &name,
-        Verification::Sha256(sha256) => sha256,
-        Verification::Sha512(sha512) => sha512,
+        Verification::None => format!("noverify-{}", &name),
+        Verification::Sha256(sha256) => sha256.to_string(),
+        Verification::Sha512(sha512) => sha512.to_string(),
     });
 
     if p.is_dir() {
