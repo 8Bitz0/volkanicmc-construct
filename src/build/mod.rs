@@ -42,8 +42,13 @@ pub async fn build(
     user_vars_raw: Vec<String>,
     allow_custom_jvm_args: bool,
     additional_jvm_args: Vec<String>,
+    prevent_verify: bool,
 ) -> Result<(), BuildError> {
     let mut user_vars = template::var::EnvMap::new();
+
+    if prevent_verify {
+        warn!("Verification is disabled. Continue at your own risk.");
+    }
 
     for var in user_vars_raw {
         let mut split = var.splitn(2, '=');
@@ -74,7 +79,7 @@ pub async fn build(
         .map_err(BuildError::VarProcess)?;
 
     info!("Creating jobs...");
-    let jobs = job::create_jobs(&template, jdk_config, &variables)
+    let jobs = job::create_jobs(&template, jdk_config, &variables, prevent_verify)
         .await
         .map_err(BuildError::Job)?;
 

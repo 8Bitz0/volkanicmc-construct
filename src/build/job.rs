@@ -81,7 +81,7 @@ pub enum JobAction {
     },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
-    PrepareJdk { jdk: Jdk },
+    PrepareJdk { jdk: Jdk, no_verify: bool },
 }
 
 impl JobAction {
@@ -258,8 +258,8 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
             }
-            JobAction::PrepareJdk { jdk } => {
-                prepare_jdk::prepare_jdk(store.clone(), jdk.clone())
+            JobAction::PrepareJdk { jdk, no_verify } => {
+                prepare_jdk::prepare_jdk(store.clone(), jdk.clone(), *no_verify)
                     .await
                     .map_err(JobError::PrepareJdk)?;
             }
@@ -279,6 +279,7 @@ pub async fn create_jobs(
     template: &crate::template::Template,
     jdk_config: JdkConfig,
     var_map: &template::var::VarMap,
+    no_verify: bool,
 ) -> Result<Vec<Job>, JobError> {
     let mut jobs = vec![];
 
@@ -298,6 +299,7 @@ pub async fn create_jobs(
                             return Err(JobError::JdkNotFound(version.to_string()));
                         }
                     },
+                    no_verify,
                 },
             });
         }
@@ -318,7 +320,11 @@ pub async fn create_jobs(
                     user_agent: None,
                     override_name: None,
                     archive: None,
-                    sha512: Some(sha512.clone()),
+                    sha512: if no_verify {
+                        None
+                    } else {
+                        Some(sha512.clone())
+                    },
                 },
             });
         }

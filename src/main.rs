@@ -32,6 +32,9 @@ enum Command {
         /// Add additional JVM arguments to place before the template's JVM arguments
         #[arg(short = 'j', long, value_parser, num_args = 1.., value_delimiter = ' ')]
         additional_jvm_args: Vec<String>,
+        /// Disable verification for all files
+        #[arg(long)]
+        no_verify: bool,
     },
     /// Parse a template at the given path
     Check { path: path::PathBuf },
@@ -82,6 +85,7 @@ async fn main() {
             user_vars,
             allow_custom_jvm_args,
             additional_jvm_args,
+            no_verify,
         } => {
             let template = match template::Template::import(path).await {
                 Ok(template) => template,
@@ -107,6 +111,7 @@ async fn main() {
                 user_vars,
                 allow_custom_jvm_args,
                 additional_jvm_args,
+                no_verify,
             )
             .await
             {
