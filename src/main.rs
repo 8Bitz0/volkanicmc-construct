@@ -72,6 +72,7 @@ async fn main() {
     {
         tracing_subscriber::fmt()
             .event_format(tracing_subscriber::fmt::format().compact())
+            .with_target(false)
             .with_max_level(tracing::Level::INFO)
             .init();
     }
