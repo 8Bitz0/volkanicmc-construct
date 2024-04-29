@@ -30,7 +30,7 @@ pub enum JdkPreset {
 }
 
 impl JdkPreset {
-    pub fn get_args(&self) -> Vec<String> {
+    pub async fn get_args(&self) -> Vec<String> {
         match self {
             JdkPreset::Aikars => AIKARS_FLAGS.iter().map(|s| s.to_string()).collect(),
         }

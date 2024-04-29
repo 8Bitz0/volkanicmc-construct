@@ -81,7 +81,7 @@ pub enum JobAction {
     },
     /// Setup JDK
     #[serde(rename = "prepare-jdk")]
-    PrepareJdk { jdk: Jdk },
+    PrepareJdk { jdk: Jdk, no_verify: bool },
 }
 
 impl JobAction {
@@ -165,7 +165,7 @@ impl JobAction {
                                 .map_err(JobError::ExtractionError)?;
                         let a_path_inner = archive_path.join(t.inner_path.clone());
 
-                        match misc::fs_obj(a_path_inner.clone()) {
+                        match misc::fs_obj(a_path_inner.clone()).await {
                             misc::FsObjectType::Directory => {
                                 match copy_dir::copy_dir(&a_path_inner, &abs_path) {
                                     Ok(_) => {
@@ -184,7 +184,7 @@ impl JobAction {
                                 for p in &t.post_remove {
                                     let abs_rm_path = abs_path.join(p);
 
-                                    match misc::fs_obj(abs_rm_path.clone()) {
+                                    match misc::fs_obj(abs_rm_path.clone()).await {
                                         misc::FsObjectType::Directory => {
                                             info!(
                                                 "Remove post-removal directory: \"{}\"",
@@ -230,7 +230,7 @@ impl JobAction {
 
                 let include = vkinclude::VolkanicInclude::new().await;
 
-                let p = match include.get(id) {
+                let p = match include.get(id).await {
                     Some(p) => p,
                     None => return Err(JobError::NotAvailableInIncludeFolder(id.to_string())),
                 };
@@ -248,7 +248,7 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
 
-                contents = template::var::string_replace(contents, variables, format.clone());
+                contents = template::var::string_replace(contents, variables, format.clone()).await;
 
                 let mut f = fs::File::create(store.build_path.join(path))
                     .await
@@ -258,8 +258,8 @@ impl JobAction {
                     .await
                     .map_err(JobError::Filesystem)?;
             }
-            JobAction::PrepareJdk { jdk } => {
-                prepare_jdk::prepare_jdk(store.clone(), jdk.clone())
+            JobAction::PrepareJdk { jdk, no_verify } => {
+                prepare_jdk::prepare_jdk(store.clone(), jdk.clone(), *no_verify)
                     .await
                     .map_err(JobError::PrepareJdk)?;
             }
@@ -279,6 +279,7 @@ pub async fn create_jobs(
     template: &crate::template::Template,
     jdk_config: JdkConfig,
     var_map: &template::var::VarMap,
+    no_verify: bool,
 ) -> Result<Vec<Job>, JobError> {
     let mut jobs = vec![];
 
@@ -298,6 +299,7 @@ pub async fn create_jobs(
                             return Err(JobError::JdkNotFound(version.to_string()));
                         }
                     },
+                    no_verify,
                 },
             });
         }
@@ -318,7 +320,11 @@ pub async fn create_jobs(
                     user_agent: None,
                     override_name: None,
                     archive: None,
-                    sha512: Some(sha512.clone()),
+                    sha512: if no_verify {
+                        None
+                    } else {
+                        Some(sha512.clone())
+                    },
                 },
             });
         }

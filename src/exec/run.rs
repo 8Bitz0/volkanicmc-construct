@@ -32,8 +32,12 @@ pub enum ExecutionError {
     ChildProcessFailedCode(i32),
 }
 
-#[cfg(target_os = "windows")]
-pub fn winpath_fix(path: String) -> String {
+// Prevent "dead_code" warning when compiling on non-Windows targets
+#[allow(dead_code)]
+/// Removes that weird "\\?\" prefix from Windows paths
+///
+/// Hacky solution for a hacky operating system.
+pub async fn winpath_fix(path: String) -> String {
     path.replace("\\\\?\\", "")
 }
 
@@ -49,12 +53,12 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
 
     let exec_info = build_info.exec.ok_or(ExecutionError::BuildNotFound)?;
 
-    let arch = if let Some(a) = hostinfo::Arch::get() {
+    let arch = if let Some(a) = hostinfo::Arch::get().await {
         a
     } else {
         Err(ExecutionError::UnknownArchitecture)?
     };
-    let os = if let Some(a) = hostinfo::Os::get() {
+    let os = if let Some(a) = hostinfo::Os::get().await {
         a
     } else {
         Err(ExecutionError::UnknownPlatform)?
@@ -176,4 +180,17 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_winpath_fix() {
+        assert_eq!(
+            winpath_fix("\\\\?\\C:\\Windows\\System32\\cmd.exe".to_string()).await,
+            "C:\\Windows\\System32\\cmd.exe"
+        )
+    }
 }

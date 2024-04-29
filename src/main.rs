@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use clap::{Parser, Subcommand};
 use std::path;
 use tracing::{error, info};
@@ -30,6 +32,9 @@ enum Command {
         /// Add additional JVM arguments to place before the template's JVM arguments
         #[arg(short = 'j', long, value_parser, num_args = 1.., value_delimiter = ' ')]
         additional_jvm_args: Vec<String>,
+        /// Disable verification for all files
+        #[arg(long)]
+        no_verify: bool,
     },
     /// Parse a template at the given path
     Check { path: path::PathBuf },
@@ -67,6 +72,7 @@ async fn main() {
     {
         tracing_subscriber::fmt()
             .event_format(tracing_subscriber::fmt::format().compact())
+            .with_target(false)
             .with_max_level(tracing::Level::INFO)
             .init();
     }
@@ -80,6 +86,7 @@ async fn main() {
             user_vars,
             allow_custom_jvm_args,
             additional_jvm_args,
+            no_verify,
         } => {
             let template = match template::Template::import(path).await {
                 Ok(template) => template,
@@ -105,6 +112,7 @@ async fn main() {
                 user_vars,
                 allow_custom_jvm_args,
                 additional_jvm_args,
+                no_verify,
             )
             .await
             {
@@ -215,7 +223,7 @@ async fn main() {
 
             println!(
                 "{}",
-                crate::exec::script::to_script(exec_info, store.build_path)
+                crate::exec::script::to_script(exec_info, store.build_path).await
             );
         }
         Command::Clean => {

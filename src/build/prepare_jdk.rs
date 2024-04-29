@@ -25,7 +25,11 @@ pub enum PrepareJdkError {
     NoNameForUrl(String),
 }
 
-pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), PrepareJdkError> {
+pub async fn prepare_jdk(
+    store: vkstore::VolkanicStore,
+    jdk: Jdk,
+    no_verify: bool,
+) -> Result<(), PrepareJdkError> {
     let jdk_name = match get_remote_filename(&jdk.url).await {
         Some(s) => s,
         None => return Err(PrepareJdkError::NoNameForUrl(jdk.url.clone())),
@@ -34,7 +38,11 @@ pub async fn prepare_jdk(store: vkstore::VolkanicStore, jdk: Jdk) -> Result<(), 
     let jdk_path = download_progress(
         store.clone(),
         &jdk.url,
-        Verification::Sha256(jdk.sha256),
+        if no_verify {
+            Verification::None
+        } else {
+            Verification::Sha256(jdk.sha256)
+        },
         jdk_name.clone(),
         None,
     )

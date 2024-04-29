@@ -13,7 +13,7 @@ impl VolkanicInclude {
             path: path::PathBuf::from(INCLUDE_DIR_NAME),
         }
     }
-    pub fn get(&self, id: impl std::fmt::Display) -> Option<path::PathBuf> {
+    pub async fn get(&self, id: impl std::fmt::Display) -> Option<path::PathBuf> {
         let p = self.path.join(id.to_string());
 
         if p.exists() {

@@ -24,7 +24,7 @@ pub async fn embed(template: Template) -> Result<Template, TemplateManagementErr
                 template_path,
             } => {
                 let include = vkinclude::VolkanicInclude::new().await;
-                let p = match include.get(&include_id) {
+                let p = match include.get(&include_id).await {
                     Some(p) => p,
                     None => {
                         error!(

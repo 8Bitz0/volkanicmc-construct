@@ -1,5 +1,4 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use sysinfo::{System, SystemExt};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 pub enum Os {
@@ -112,7 +111,7 @@ impl<'de> Deserialize<'de> for Arch {
 }
 
 impl Os {
-    pub fn get() -> Option<Os> {
+    pub async fn get() -> Option<Os> {
         Some(match std::env::consts::OS {
             "android" => Os::Android,
             "freebsd" => Os::FreeBsd,
@@ -123,22 +122,17 @@ impl Os {
             "dragonfly" => Os::Dragonfly,
             "solaris" => Os::Solaris,
             "windows" => Os::Windows,
-            "linux" => {
-                let mut sys = System::new();
-                sys.refresh_system();
-
-                match sys.distribution_id().as_str() {
-                    "alpine" => Os::Alpine,
-                    _ => Os::Linux,
-                }
-            }
+            "linux" => match sysinfo::System::distribution_id().as_str() {
+                "alpine" => Os::Alpine,
+                _ => Os::Linux,
+            },
             _ => return None,
         })
     }
 }
 
 impl Arch {
-    pub fn get() -> Option<Arch> {
+    pub async fn get() -> Option<Arch> {
         Some(match std::env::consts::ARCH {
             "x86" => Arch::X86,
             "x86_64" => Arch::Amd64,

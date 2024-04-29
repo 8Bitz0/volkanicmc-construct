@@ -3,7 +3,7 @@ use super::BuildExecInfo;
 const BASH_SHEBANG: &str = "#!/usr/bin/env bash";
 
 /// Creates a Bash script from `BuildExecInfo`
-pub fn to_script(exec_info: BuildExecInfo, build_path: std::path::PathBuf) -> String {
+pub async fn to_script(exec_info: BuildExecInfo, build_path: std::path::PathBuf) -> String {
     format!(
         "{}\n\nexport JDK_PATH=$(realpath {})\ncd {} && exec $JDK_PATH {} -jar {} {}",
         BASH_SHEBANG,
@@ -19,8 +19,8 @@ pub fn to_script(exec_info: BuildExecInfo, build_path: std::path::PathBuf) -> St
 mod tests {
     use super::to_script;
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let exec_info = super::BuildExecInfo {
             arch: crate::hostinfo::Arch::Amd64,
             os: crate::hostinfo::Os::Linux,
@@ -30,7 +30,7 @@ mod tests {
             server_args: vec!["-nogui".to_string()],
         };
 
-        let script = to_script(exec_info, std::path::PathBuf::from(".volkanic/build"));
+        let script = to_script(exec_info, std::path::PathBuf::from(".volkanic/build")).await;
 
         assert_eq!(script, "#!/usr/bin/env bash\n\nexport JDK_PATH=$(realpath .volkanic/runtime/java)\ncd .volkanic/build && exec $JDK_PATH -Xms512M -Xmx1024M -jar server.jar -nogui");
     }
