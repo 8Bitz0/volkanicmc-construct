@@ -38,8 +38,8 @@
   },
   "server": {
     "java": {
-      "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/446/downloads/paper-1.20.4-446.jar",
-      "sha512": "cad7b08823d3c3f8811cc012826e2c3c1c4fae6e3464eaa863d90eb61bec5b264dbfadfc0e47b1b9e89701172a4b3e10e96d60ed45f86c4e285d45dc535e8165",
+      "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar",
+      "sha512": "8a9fb79379888b0e28752eda228530cc2633562641715c32e62d67b59213d5c11fe8be6b22cb103da5146f1fba192636234e82c382022dee4671e19e641ae355",
       "args": "-nogui"
     }
   },
