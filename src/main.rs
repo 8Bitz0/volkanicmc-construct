@@ -15,6 +15,9 @@ mod vkstore;
 struct Args {
     #[command(subcommand)]
     command: Command,
+    /// Override build directory
+    #[arg(short = 'b', long)]
+    override_build_dir: Option<path::PathBuf>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -56,8 +59,7 @@ enum TemplateCommand {
     Create,
 }
 
-#[tokio::main]
-async fn main() {
+async fn init_log() {
     #[cfg(feature = "debug_log")]
     {
         println!("Debug logging enabled");
@@ -76,7 +78,10 @@ async fn main() {
             .with_max_level(tracing::Level::INFO)
             .init();
     }
+}
 
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
     match args.command {
@@ -88,6 +93,8 @@ async fn main() {
             additional_jvm_args,
             no_verify,
         } => {
+            init_log().await;
+
             let template = match template::Template::import(path).await {
                 Ok(template) => template,
                 Err(e) => {
@@ -97,7 +104,7 @@ async fn main() {
             };
             info!("Template \"{}\" parsed correctly", template.name);
 
-            let store = match vkstore::VolkanicStore::init().await {
+            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
                 Ok(store) => store,
                 Err(e) => {
                     error!("Failed to initialize store: {}", e);
@@ -124,6 +131,8 @@ async fn main() {
             };
         }
         Command::Check { path } => {
+            init_log().await;
+
             let template = match template::Template::import(path).await {
                 Ok(template) => template,
                 Err(e) => {
@@ -134,7 +143,9 @@ async fn main() {
             info!("Template \"{}\" parsed correctly", template.name);
         }
         Command::Run => {
-            let store = match vkstore::VolkanicStore::init().await {
+            init_log().await;
+
+            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
                 Ok(store) => store,
                 Err(e) => {
                     error!("Failed to initialize store: {}", e);
@@ -155,6 +166,8 @@ async fn main() {
                 let template = match template::Template::import(path).await {
                     Ok(template) => template,
                     Err(e) => {
+                        init_log().await;
+
                         error!("Failed to parse template: {}", e);
                         std::process::exit(1);
                     }
@@ -167,6 +180,8 @@ async fn main() {
                             match serde_jsonc::to_string_pretty(&t) {
                                 Ok(json) => json,
                                 Err(e) => {
+                                    init_log().await;
+
                                     error!("Failed to serialize template: {}", e);
                                     std::process::exit(1);
                                 }
@@ -174,6 +189,8 @@ async fn main() {
                         );
                     }
                     Err(e) => {
+                        init_log().await;
+
                         error!("Failed to embed template: {}", e);
                         std::process::exit(1);
                     }
@@ -185,6 +202,8 @@ async fn main() {
                     match serde_jsonc::to_string_pretty(&template::Template::default()) {
                         Ok(json) => json,
                         Err(e) => {
+                            init_log().await;
+
                             error!("Failed to serialize template: {}", e);
                             std::process::exit(1);
                         }
@@ -193,21 +212,28 @@ async fn main() {
             }
         },
         Command::ExecScript => {
-            let store = match vkstore::VolkanicStore::init().await {
+            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
                 Ok(store) => store,
                 Err(e) => {
+                    init_log().await;
+
                     error!("Failed to initialize store: {}", e);
                     std::process::exit(1);
                 }
             };
 
             if !build::BuildInfo::exists(&store).await {
+                init_log().await;
+
                 error!("No build info found");
+                std::process::exit(1);
             }
 
             let build_info = match build::BuildInfo::get(&store).await {
                 Ok(build_info) => build_info,
                 Err(e) => {
+                    init_log().await;
+
                     error!("Failed to initialize build info: {}", e);
                     std::process::exit(1);
                 }
@@ -216,6 +242,8 @@ async fn main() {
             let exec_info = match build_info.exec {
                 Some(exec_info) => exec_info,
                 None => {
+                    init_log().await;
+
                     error!("No execution info provided in build info file");
                     std::process::exit(1);
                 }
@@ -227,8 +255,10 @@ async fn main() {
             );
         }
         Command::Clean => {
+            init_log().await;
+
             if vkstore::VolkanicStore::exists().await {
-                let store = match vkstore::VolkanicStore::init().await {
+                let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
                     Ok(store) => store,
                     Err(e) => {
                         error!("Failed to initialize store: {}", e);

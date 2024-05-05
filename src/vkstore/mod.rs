@@ -1,6 +1,6 @@
 use std::path;
 use tokio::fs;
-use tracing::debug;
+use tracing::{debug, info};
 
 const VKSTORE_PATH: &str = ".volkanic/";
 
@@ -56,10 +56,20 @@ impl VolkanicStore {
         path::Path::new(VKSTORE_PATH).is_dir()
     }
     /// Creates a new `VolkanicStore` and creates all necessary subdirectories
-    pub async fn init() -> Result<Self, StoreError> {
+    pub async fn init<T: AsRef<path::Path>>(override_build: Option<T>) -> Result<Self, StoreError> {
         let store = Self {
             path: path::PathBuf::from(VKSTORE_PATH),
-            build_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
+            build_path: match override_build {
+                Some(p) => {
+                    info!(
+                        "Overriding build directory, using: \"{}\"",
+                        p.as_ref().to_string_lossy()
+                    );
+
+                    p.as_ref().to_path_buf()
+                }
+                None => path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
+            },
             downloads_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_DOWNLOADS_SUFFIX),
             runtime_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_RUNTIME_SUFFIX),
             temp_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_TEMP_SUFFIX),
