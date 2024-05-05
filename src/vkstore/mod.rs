@@ -1,6 +1,6 @@
 use std::path;
-use tokio::fs;
-use tracing::debug;
+use tokio::{fs, task::spawn_blocking};
+use tracing::{debug, error, info};
 
 const VKSTORE_PATH: &str = ".volkanic/";
 
@@ -23,6 +23,30 @@ pub struct VolkanicStore {
     pub runtime_path: path::PathBuf,
     // TODO: Create temporary file management
     pub temp_path: path::PathBuf,
+}
+
+async fn clear_dir<T: AsRef<path::Path>>(path: T) -> tokio::io::Result<()> {
+    let path = path.as_ref().to_path_buf();
+
+    debug!("Clearing directory: \"{}\"", path.to_string_lossy());
+
+    for e in spawn_blocking(move || std::fs::read_dir(path)).await?? {
+        let p = e?.path();
+
+        if p.is_file() {
+            debug!("Removing inner file: \"{}\"", p.to_string_lossy());
+
+            fs::remove_file(p).await?;
+        } else if p.is_dir() {
+            debug!("Removing inner directory: \"{}\"", p.to_string_lossy());
+
+            fs::remove_dir_all(p).await?;
+        } else {
+            error!("Directory \"{}\" not found", p.to_string_lossy());
+        }
+    }
+
+    Ok(())
 }
 
 impl VolkanicStore {
@@ -56,10 +80,20 @@ impl VolkanicStore {
         path::Path::new(VKSTORE_PATH).is_dir()
     }
     /// Creates a new `VolkanicStore` and creates all necessary subdirectories
-    pub async fn init() -> Result<Self, StoreError> {
+    pub async fn init<T: AsRef<path::Path>>(override_build: Option<T>) -> Result<Self, StoreError> {
         let store = Self {
             path: path::PathBuf::from(VKSTORE_PATH),
-            build_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
+            build_path: match override_build {
+                Some(p) => {
+                    info!(
+                        "Overriding build directory, using: \"{}\"",
+                        p.as_ref().to_string_lossy()
+                    );
+
+                    p.as_ref().to_path_buf()
+                }
+                None => path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
+            },
             downloads_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_DOWNLOADS_SUFFIX),
             runtime_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_RUNTIME_SUFFIX),
             temp_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_TEMP_SUFFIX),
@@ -74,9 +108,7 @@ impl VolkanicStore {
         let to_remove = [&self.temp_path];
 
         for dir in to_remove {
-            fs::remove_dir_all(dir)
-                .await
-                .map_err(StoreError::Filesystem)?;
+            clear_dir(dir).await.map_err(StoreError::Filesystem)?;
         }
 
         Ok(())
@@ -87,9 +119,7 @@ impl VolkanicStore {
 
         for dir in to_remove {
             if dir.is_dir() {
-                fs::remove_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
+                clear_dir(dir).await.map_err(StoreError::Filesystem)?;
             }
         }
 
@@ -101,12 +131,7 @@ impl VolkanicStore {
 
         for dir in to_clear {
             if dir.is_dir() {
-                fs::remove_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
-                fs::create_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
+                clear_dir(dir).await.map_err(StoreError::Filesystem)?;
             }
         }
 

@@ -15,7 +15,7 @@ RUN apt-get update --quiet --option Dir::Etc::SourceParts="" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app/build
+WORKDIR /build
 
 COPY ./src ./src
 COPY ./Cargo.toml ./Cargo.toml
@@ -32,7 +32,7 @@ RUN cargo build --profile release
 
 FROM docker.io/library/ubuntu:jammy AS final
 
-WORKDIR /app
+WORKDIR /vk
 
 COPY ./containers/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -40,9 +40,12 @@ RUN chmod +x /entrypoint.sh
 # Add user `volkanic` so no construct builds run as root
 RUN useradd -ms /bin/bash volkanic
 
-RUN chown -R volkanic:volkanic /app
+# Create needed directories and set permissions
+RUN mkdir /server && \
+    chown -R volkanic:volkanic /server && \
+    chown -R volkanic:volkanic /vk
 
-COPY --from=build /app/build/target/release/volkanicmc-construct /home/volkanic/.local/bin/volkanicmc-construct
+COPY --from=build /build/target/release/volkanicmc-construct /home/volkanic/.local/bin/volkanicmc-construct
 
 USER volkanic
 
