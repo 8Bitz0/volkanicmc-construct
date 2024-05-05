@@ -37,13 +37,13 @@ export PATH="${PATH}:~/.local/bin"
 if [[ -f ".volkanic/build.json" ]]; then
     echo "Build already present"
 elif [[ $ALWAYS_REBUILD == "1" ]]; then
-    volkanicmc-construct build --force --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
+    volkanicmc-construct -b /server build --force --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
 else
-    volkanicmc-construct build --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
+    volkanicmc-construct -b /server build --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
 fi
 
 # Create VolkanicMC start script
-volkanicmc-construct exec-script > vkstart.sh
+volkanicmc-construct -b /server exec-script > vkstart.sh
 chmod +x vkstart.sh
 
 # Execute the start script

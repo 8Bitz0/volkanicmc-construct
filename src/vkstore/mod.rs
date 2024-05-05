@@ -1,6 +1,6 @@
 use std::path;
-use tokio::fs;
-use tracing::{debug, info};
+use tokio::{fs, task::spawn_blocking};
+use tracing::{debug, error, info};
 
 const VKSTORE_PATH: &str = ".volkanic/";
 
@@ -23,6 +23,30 @@ pub struct VolkanicStore {
     pub runtime_path: path::PathBuf,
     // TODO: Create temporary file management
     pub temp_path: path::PathBuf,
+}
+
+async fn clear_dir<T: AsRef<path::Path>>(path: T) -> tokio::io::Result<()> {
+    let path = path.as_ref().to_path_buf();
+
+    debug!("Clearing directory: \"{}\"", path.to_string_lossy());
+
+    for e in spawn_blocking(move || std::fs::read_dir(path)).await?? {
+        let p = e?.path();
+
+        if p.is_file() {
+            debug!("Removing inner file: \"{}\"", p.to_string_lossy());
+
+            fs::remove_file(p).await?;
+        } else if p.is_dir() {
+            debug!("Removing inner directory: \"{}\"", p.to_string_lossy());
+
+            fs::remove_dir_all(p).await?;
+        } else {
+            error!("Directory \"{}\" not found", p.to_string_lossy());
+        }
+    }
+
+    Ok(())
 }
 
 impl VolkanicStore {
@@ -84,9 +108,7 @@ impl VolkanicStore {
         let to_remove = [&self.temp_path];
 
         for dir in to_remove {
-            fs::remove_dir_all(dir)
-                .await
-                .map_err(StoreError::Filesystem)?;
+            clear_dir(dir).await.map_err(StoreError::Filesystem)?;
         }
 
         Ok(())
@@ -97,9 +119,7 @@ impl VolkanicStore {
 
         for dir in to_remove {
             if dir.is_dir() {
-                fs::remove_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
+                clear_dir(dir).await.map_err(StoreError::Filesystem)?;
             }
         }
 
@@ -111,12 +131,7 @@ impl VolkanicStore {
 
         for dir in to_clear {
             if dir.is_dir() {
-                fs::remove_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
-                fs::create_dir_all(dir)
-                    .await
-                    .map_err(StoreError::Filesystem)?;
+                clear_dir(dir).await.map_err(StoreError::Filesystem)?;
             }
         }
 
