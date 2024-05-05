@@ -85,43 +85,36 @@ pub async fn build(
 
     info!("Scheduled {} jobs", jobs.len());
 
-    let mut build_info = {
-        if buildinfo::BuildInfo::exists(&store).await {
-            let mut build_info = buildinfo::BuildInfo::get(&store)
-                .await
-                .map_err(BuildError::BuildInfo)?;
+    if buildinfo::BuildInfo::exists(&store).await {
+        let old_build_info = buildinfo::BuildInfo::get(&store)
+            .await
+            .map_err(BuildError::BuildInfo)?;
 
-            if build_info.job_progress == build_info.jobs.len() && !build_info.jobs.is_empty() {
-                warn!("Build is already present.");
+        if old_build_info.job_progress == old_build_info.jobs.len()
+            && !old_build_info.jobs.is_empty()
+        {
+            warn!("Build is already present.");
 
-                if force {
-                    warn!("Rebuild forced")
-                } else {
-                    error!("Please specify the \"--force\" flag to rebuild.");
-                    return Err(BuildError::BuildPresent);
-                }
+            if force {
+                warn!("Rebuild forced")
             } else {
-                warn!("Incomplete build found. Rebuilding...");
+                error!("Please specify the \"--force\" flag to rebuild.");
+                return Err(BuildError::BuildPresent);
             }
-
-            build_info.jobs = jobs;
-            store.renew().await.map_err(BuildError::Store)?;
-
-            build_info.set_path(&store).await;
-
-            build_info
         } else {
-            let mut build_info = buildinfo::BuildInfo::new(&store, template.clone())
-                .await
-                .map_err(BuildError::BuildInfo)?;
-
-            build_info.jobs = jobs;
-
-            store.renew().await.map_err(BuildError::Store)?;
-
-            build_info
+            warn!("Incomplete build found. Rebuilding...");
         }
-    };
+    }
+
+    let mut build_info = buildinfo::BuildInfo::new(&store, template.clone())
+        .await
+        .map_err(BuildError::BuildInfo)?;
+
+    build_info.set_path(&store).await;
+    build_info.jobs = jobs;
+    build_info.persistent_objects = template.persistent_objects;
+
+    store.renew().await.map_err(BuildError::Store)?;
 
     let server_args: Option<Vec<String>> = match &template.server {
         template::resource::ServerExecResource::Java {

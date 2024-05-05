@@ -5,9 +5,12 @@ use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info};
 
-use crate::resources::{self, Jdk, JdkConfig};
-use crate::template::{self, vkinclude};
-use crate::vkstore;
+use crate::{
+    misc::{fs_obj, FsObjectType},
+    resources::{self, Jdk, JdkConfig},
+    template::{self, vkinclude},
+    vkstore,
+};
 
 use super::buildinfo;
 use super::misc;
@@ -165,8 +168,8 @@ impl JobAction {
                                 .map_err(JobError::ExtractionError)?;
                         let a_path_inner = archive_path.join(t.inner_path.clone());
 
-                        match misc::fs_obj(a_path_inner.clone()).await {
-                            misc::FsObjectType::Directory => {
+                        match fs_obj(a_path_inner.clone()).await {
+                            FsObjectType::Directory => {
                                 match copy_dir::copy_dir(&a_path_inner, &abs_path) {
                                     Ok(_) => {
                                         info!(
@@ -184,8 +187,8 @@ impl JobAction {
                                 for p in &t.post_remove {
                                     let abs_rm_path = abs_path.join(p);
 
-                                    match misc::fs_obj(abs_rm_path.clone()).await {
-                                        misc::FsObjectType::Directory => {
+                                    match fs_obj(abs_rm_path.clone()).await {
+                                        FsObjectType::Directory => {
                                             info!(
                                                 "Remove post-removal directory: \"{}\"",
                                                 p.to_string_lossy()
@@ -194,10 +197,10 @@ impl JobAction {
                                                 .await
                                                 .map_err(JobError::Filesystem)?;
                                         }
-                                        misc::FsObjectType::File => fs::remove_file(abs_rm_path)
+                                        FsObjectType::File => fs::remove_file(abs_rm_path)
                                             .await
                                             .map_err(JobError::Filesystem)?,
-                                        misc::FsObjectType::None => {
+                                        FsObjectType::None => {
                                             error!(
                                                 "Post-removal inner-archive path not found: {}",
                                                 p.to_string_lossy()
@@ -206,12 +209,12 @@ impl JobAction {
                                     }
                                 }
                             }
-                            misc::FsObjectType::File => {
+                            FsObjectType::File => {
                                 fs::copy(&a_path_inner, &abs_path)
                                     .await
                                     .map_err(JobError::Filesystem)?;
                             }
-                            misc::FsObjectType::None => {
+                            FsObjectType::None => {
                                 return Err(JobError::InnerArchivePathNotFound(a_path_inner))
                             }
                         }

@@ -64,5 +64,17 @@
         "template-path": "eula.txt"
       }
     }
+  ],
+  "persistent-objects": [
+    {"directory": "world/"},
+    {"directory": "world_nether/"},
+    {"directory": "world_the_end/"},
+    {"file": ".console_history"},
+    {"file": "banned-ips.json"},
+    {"file": "banned-players.json"},
+    {"file": "ops.json"},
+    {"file": "whitelist.json"},
+    {"file": "version_history.json"},
+    {"file": "usercache.json"}
   ]
 }

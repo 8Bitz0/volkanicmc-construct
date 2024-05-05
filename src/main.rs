@@ -7,6 +7,8 @@ use tracing::{error, info};
 mod build;
 mod exec;
 mod hostinfo;
+mod misc;
+mod persistence;
 mod resources;
 mod template;
 mod vkstore;
@@ -42,6 +44,8 @@ enum Command {
     Run,
     #[command(subcommand)]
     Template(TemplateCommand),
+    /// Copy all persistent files for the current build
+    Persist { persistent_path: path::PathBuf },
     /// Create a Bash script from the execution information of an existing build
     ExecScript,
     /// Clear downloads and temporary files
@@ -192,6 +196,41 @@ async fn main() {
                 );
             }
         },
+        Command::Persist { persistent_path } => {
+            let store = match vkstore::VolkanicStore::init().await {
+                Ok(store) => store,
+                Err(e) => {
+                    error!("Failed to initialize store: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            if !build::BuildInfo::exists(&store).await {
+                error!("No build info found");
+            }
+
+            let build_info = match build::BuildInfo::get(&store).await {
+                Ok(build_info) => build_info,
+                Err(e) => {
+                    error!("Failed to initialize build info: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            match persistence::copy::save_persistent(
+                &store,
+                build_info.persistent_objects,
+                persistent_path,
+            )
+            .await
+            {
+                Ok(()) => {}
+                Err(e) => {
+                    error!("Failed to copy persistent objects: {}", e);
+                    std::process::exit(1);
+                }
+            };
+        }
         Command::ExecScript => {
             let store = match vkstore::VolkanicStore::init().await {
                 Ok(store) => store,

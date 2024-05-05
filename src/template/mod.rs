@@ -11,6 +11,8 @@ mod parse;
 
 pub use parse::ParseError;
 
+use crate::persistence::PersistentObject;
+
 pub const TEMPLATE_FORMAT: usize = 1;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -37,6 +39,9 @@ pub struct Template {
     pub server: resource::ServerExecResource,
     /// List of additional resources (e.g. plugins, mods, configs, etc.)
     pub resources: Vec<resource::GenericResource>,
+    /// Persistent objects
+    #[serde(rename = "persistent-objects")]
+    pub persistent_objects: Vec<PersistentObject>,
 }
 
 impl Template {
@@ -49,7 +54,7 @@ impl Default for Template {
     fn default() -> Self {
         Self {
             template_format: TEMPLATE_FORMAT,
-            name: "1.20.2 Paper".into(),
+            name: "1.20.4 Paper".into(),
             description: "Server running Minecraft 1.20.2 with PaperMC".into(),
             author: Some("Example".into()),
             version: Some((1, Some(0), Some(0))),
@@ -77,6 +82,18 @@ impl Default for Template {
                     template_path: "server.properties".into(),
                 },
             ],
+            persistent_objects: vec![
+                PersistentObject::Directory(path::PathBuf::from("world/")),
+                PersistentObject::Directory(path::PathBuf::from("world_nether/")),
+                PersistentObject::Directory(path::PathBuf::from("world_the_end/")),
+                PersistentObject::File(path::PathBuf::from(".console_history")),
+                PersistentObject::File(path::PathBuf::from("banned-ips.json")),
+                PersistentObject::File(path::PathBuf::from("banned-players.json")),
+                PersistentObject::File(path::PathBuf::from("ops.json")),
+                PersistentObject::File(path::PathBuf::from("whitelist.json")),
+                PersistentObject::File(path::PathBuf::from("version_history.json")),
+                PersistentObject::File(path::PathBuf::from("usercache.json")),
+            ]
         }
     }
 }

@@ -11,6 +11,7 @@ use tokio::{
 use tracing::{debug, error, info, warn};
 
 use crate::{
+    misc::{fs_obj, FsObjectType},
     resources::{self, ArchiveFormat},
     vkstore,
 };
@@ -259,29 +260,6 @@ pub async fn extract(
     }
 
     Ok(new_path)
-}
-
-#[derive(Debug, PartialEq)]
-pub enum FsObjectType {
-    None,
-    File,
-    Directory,
-}
-
-impl std::fmt::Display for FsObjectType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-pub async fn fs_obj(path: path::PathBuf) -> FsObjectType {
-    if path.is_file() {
-        FsObjectType::File
-    } else if path.is_dir() {
-        FsObjectType::Directory
-    } else {
-        FsObjectType::None
-    }
 }
 
 #[derive(thiserror::Error, Debug)]

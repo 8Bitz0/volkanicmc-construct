@@ -4,6 +4,7 @@ use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info, warn};
 
 use crate::exec;
+use crate::persistence::PersistentObject;
 use crate::template;
 use crate::vkstore;
 
@@ -28,6 +29,8 @@ pub struct BuildInfo {
     #[serde(skip, default)]
     pub stray: bool,
     pub template: template::Template,
+    #[serde(rename = "persistent-objects")]
+    pub persistent_objects: Vec<PersistentObject>,
     #[serde(skip)]
     pub jobs: Vec<job::Job>,
     #[serde(rename = "job-progress")]
