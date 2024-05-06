@@ -9,6 +9,7 @@ RUN apt-get update --quiet --option Dir::Etc::SourceParts="" && \
       curl \
       wget \
       make \
+      cmake \
       gcc \
       g++ && \
     # Delete package cache to avoid consuming space in layer
