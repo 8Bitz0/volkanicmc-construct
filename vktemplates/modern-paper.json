@@ -46,8 +46,8 @@
   "resources": [
     {
       "remote": {
-        "url": "https://ci.lucko.me/job/spark/401/artifact/spark-bukkit/build/libs/spark-1.10.60-bukkit.jar",
-        "sha512": "6bf63ea37bb4a965a451668b6c36a79e846bb83f269aa589be1fe3fc9e78fda6f77ca3a78a057a63891a818ec962c961f0f00adce398cde91aae49e69f45b5e9",
+        "url": "https://ci.lucko.me/job/spark/411/artifact/spark-bukkit/build/libs/spark-1.10.66-bukkit.jar",
+        "sha512": "4c58c6cdad00b8839249b850187dc0824788b5685020ab0320d66026169dc8f0b2d5df125367f1d4f431225529befd6d66b5d49cb2e753ac34bd442926965d5b",
         "template-path": "plugins/spark.jar"
       }
     },

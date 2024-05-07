@@ -46,7 +46,9 @@ enum Command {
     #[command(subcommand)]
     Template(TemplateCommand),
     /// Create a Bash script from the execution information of an existing build
-    ExecScript,
+    ExecScript {
+        format: exec::script::ExecScriptType,
+    },
     /// Clear downloads and temporary files
     Clean,
 }
@@ -211,7 +213,7 @@ async fn main() {
                 );
             }
         },
-        Command::ExecScript => {
+        Command::ExecScript { format } => {
             let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
                 Ok(store) => store,
                 Err(e) => {
@@ -251,7 +253,7 @@ async fn main() {
 
             println!(
                 "{}",
-                crate::exec::script::to_script(exec_info, store.build_path).await
+                exec::script::to_script(exec_info, store.build_path, format).await
             );
         }
         Command::Clean => {

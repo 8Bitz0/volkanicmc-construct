@@ -40,7 +40,7 @@ vkconstruct run
 This works fine for quick local testing, but shouldn't be considered secure. Ideally, you should generate a shell script for executing the server.
 
 ```sh
-vkconstruct exec-script > start.sh && chmod +x start.sh
+vkconstruct exec-script bash > start.sh && chmod +x start.sh
 ./start.sh
 ```
 
