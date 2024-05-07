@@ -1,3 +1,8 @@
+![GitHub License](https://img.shields.io/github/license/8Bitz0/volkanicmc-construct)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/8Bitz0/volkanicmc-construct)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/8Bitz0/volkanicmc-construct)
+![Github Created At](https://img.shields.io/github/created-at/8Bitz0/volkanicmc-construct)
+
 # volkanicmc-construct
 
 Automatically deploy any Minecraft server by description.
