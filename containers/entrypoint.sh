@@ -43,7 +43,7 @@ else
 fi
 
 # Create VolkanicMC start script
-vkconstruct -b /server exec-script > vkstart.sh
+vkconstruct -b /server exec-script bash > vkstart.sh
 chmod +x vkstart.sh
 
 # Execute the start script

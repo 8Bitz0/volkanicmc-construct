@@ -134,14 +134,12 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
         {
             let mut runtime_args = vec![];
             runtime_args.push("/C".to_string());
-            runtime_args.push(winpath_fix(
-                full_runtime_exec_path.to_string_lossy().to_string(),
-            ));
+            runtime_args
+                .push(winpath_fix(full_runtime_exec_path.to_string_lossy().to_string()).await);
             runtime_args.extend(exec_info.runtime_args.clone());
             runtime_args.push("-jar".to_string());
-            runtime_args.push(winpath_fix(
-                full_server_exec_path.to_string_lossy().to_string(),
-            ));
+            runtime_args
+                .push(winpath_fix(full_server_exec_path.to_string_lossy().to_string()).await);
             runtime_args.extend(exec_info.server_args);
 
             (resources::conf::WIN_SHELL_CMD.to_string(), runtime_args)
