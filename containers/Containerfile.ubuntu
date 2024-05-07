@@ -46,7 +46,7 @@ RUN mkdir /server && \
     chown -R volkanic:volkanic /server && \
     chown -R volkanic:volkanic /vk
 
-COPY --from=build /build/target/release/volkanicmc-construct /home/volkanic/.local/bin/volkanicmc-construct
+COPY --from=build /build/target/release/vkconstruct /home/volkanic/.local/bin/vkconstruct
 
 USER volkanic
 
