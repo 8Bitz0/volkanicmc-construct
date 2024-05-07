@@ -8,34 +8,34 @@ Automatically deploy any Minecraft server by description.
 ## Usage
 Command-line usage can be provided with the following command:
 ```sh
-volkanicmc-construct help
+vkconstruct help
 ```
 
 ## Getting started
 
 ### Create a base template
 ```sh
-volkanicmc-construct template create > my-template.json
+vkconstruct template create > my-template.json
 ```
 
 This command prints a basic but functional template. We then redirect that output into a file.
 
 ### Build the template
 ```sh
-volkanicmc-construct build my-template.json
+vkconstruct build my-template.json
 ```
 
 Append `--force` if you would like to allow overwriting the previous build.
 
 ### Run the build
 ```sh
-volkanicmc-construct run
+vkconstruct run
 ```
 
 This works fine for quick local testing, but shouldn't be considered secure. Ideally, you should generate a shell script for executing the server.
 
 ```sh
-volkanicmc-construct exec-script > start.sh && chmod +x start.sh
+vkconstruct exec-script > start.sh && chmod +x start.sh
 ./start.sh
 ```
 
