@@ -41,3 +41,7 @@ strip = true
 opt-level = "z"
 lto = true
 panic = "abort"
+
+[[bin]]
+name = "vkconstruct"
+path = "src/main.rs"
