@@ -41,7 +41,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install stable-${{ matrix.job.target }} -y --profile=minimal
+          rustup toolchain install stable-${{ matrix.job.target }}
       - name: Build
         run: |
           cargo build --release --target ${{ matrix.job.target }}
