@@ -45,3 +45,6 @@ panic = "abort"
 [[bin]]
 name = "vkconstruct"
 path = "src/main.rs"
+
+[package.metadata.deb]
+name = "volkanicmc-construct"
