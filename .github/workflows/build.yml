@@ -42,12 +42,12 @@ jobs:
       - name: Install Rust toolchain
         run: |
           rustup toolchain install stable-${{ matrix.job.target }}
-      - name: Build
+      - name: Install cargo-deb
         run: |
-          cargo build --release --target ${{ matrix.job.target }}
-      - name: Distro packaging
+          cargo install cargo-deb
+      - name: Build Debian package
         run: |
-          cargo deb --no-build
+          cargo deb --profile release --target ${{ matrix.job.target }} 
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ matrix.job.os }}-${{ matrix.job.arch }}
