@@ -1,0 +1,54 @@
+name: Release
+on:
+  workflow_dispatch:
+  
+env:
+  CARGO_TERM_COLOR: always
+  PKG_NAME: "volkanicmc-construct"
+  VERSION: "0.1.0"
+
+jobs:
+  build-linux:
+    name: Build for Linux
+    runs-on: ${{ matrix.job.on }}
+    strategy:
+      matrix:
+        job:
+          - {
+              arch: x86_64,
+              target: x86_64-unknown-linux-gnu,
+              arm: "none",
+              on: ubuntu-20.04,
+            }
+          - {
+              arch: aarch64,
+              target: aarch64-unknown-linux-gnu,
+              arm: "raspios_lite_arm64:2023-05-03",
+              on: ubuntu-20.04,
+            }
+    steps:
+      - uses: pguyot/arm-runner-action@v2
+        if: matrix.job.arm != 'none'
+        with:
+          base_image: matrix.job.arm
+          commands: |
+            sudo apt update
+            sudo apt install -y build-essential
+
+      - uses: actions/checkout@v3
+      - name: Install Rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable-${{ matrix.job.target }} -y --profile=minimal
+      - name: Build
+        run: |
+          cargo build --release --target ${{ matrix.job.target }}
+      - name: Distro packaging
+        run: |
+          cargo deb
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ matrix.job.os }}-${{ matrix.job.arch }}
+          path: target/debian/${{ env.PKG_NAME }}-*.deb
