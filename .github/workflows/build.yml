@@ -30,7 +30,7 @@ jobs:
       - uses: pguyot/arm-runner-action@v2
         if: matrix.job.arm != 'none'
         with:
-          base_image: matrix.job.arm
+          base_image: ${{ matrix.job.arm }}
           commands: |
             sudo apt update
             sudo apt install -y build-essential
