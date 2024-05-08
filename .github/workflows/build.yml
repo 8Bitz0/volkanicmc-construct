@@ -17,31 +17,29 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-unknown-linux-gnu,
-              arm: "none",
               on: ubuntu-20.04,
             }
           - {
               arch: aarch64,
               target: aarch64-unknown-linux-gnu,
-              arm: "raspios_lite_arm64:2023-05-03",
               on: ubuntu-20.04,
             }
     steps:
-      - uses: pguyot/arm-runner-action@v2
-        if: matrix.job.arm != 'none'
-        with:
-          base_image: ${{ matrix.job.arm }}
-          commands: |
-            sudo apt update
-            sudo apt install -y build-essential
-
       - uses: actions/checkout@v3
+      - name: Install build tools
+        run: |
+          sudo apt update
+          if [[ "${{ matrix.job.arch }}" == "aarch64" ]]; then
+            sudo apt install -y gcc-aarch64-linux-gnu
+          fi
       - name: Install Rustup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
       - name: Add Rust target
         run: |
-          rustup target add stable-${{ matrix.job.target }}
+          if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
+            rustup target add stable-${{ matrix.job.target }}
+          fi
       - name: Install cargo-deb
         run: |
           cargo install cargo-deb
