@@ -53,4 +53,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ matrix.job.os }}-${{ matrix.job.arch }}
-          path: target/debian/${{ env.PKG_NAME }}-*.deb
+          path: target/**/debian/${{ env.PKG_NAME }}-*.deb
