@@ -40,6 +40,10 @@ jobs:
           if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
             rustup target add ${{ matrix.job.target }}
           fi
+      - name: Show Rust version
+        run: |
+          cargo --version
+          rustc --version
       - name: Install cargo-deb
         run: |
           cargo install cargo-deb
