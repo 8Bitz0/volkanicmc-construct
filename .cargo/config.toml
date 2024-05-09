@@ -1,4 +1,3 @@
 [target.aarch64-unknown-linux-gnu]
 linker = "aarch64-linux-gnu-gcc"
 strip = "aarch64-linux-gnu-strip"
-objcopy = "aarch64-linux-gnu-objcopy"
