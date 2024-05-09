@@ -24,6 +24,11 @@ jobs:
               target: aarch64-unknown-linux-gnu,
               on: ubuntu-20.04,
             }
+          - {
+              arch: armv7,
+              target: armv7-unknown-linux-gnueabihf,
+              on: ubuntu-20.04,
+            }
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
@@ -32,6 +37,8 @@ jobs:
           sudo apt remove cargo rustc rust-doc
           if [[ "${{ matrix.job.arch }}" == "aarch64" ]]; then
             sudo apt install -y gcc-aarch64-linux-gnu
+          elif [[ "${{ matrix.job.arch }}" == "armv7" ]]; then
+            sudo apt install -y gcc-arm-linux-gnueabihf
           fi
       - name: Install Rustup
         run: |
