@@ -29,6 +29,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
+          sudo apt remove cargo rustc rust-doc
           if [[ "${{ matrix.job.arch }}" == "aarch64" ]]; then
             sudo apt install -y gcc-aarch64-linux-gnu
           fi
