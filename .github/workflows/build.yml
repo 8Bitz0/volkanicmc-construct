@@ -60,17 +60,21 @@ jobs:
       - name: Build
         run: |
           cargo build --profile release --target ${{ matrix.job.target }}
+      - name: Determine package naming
+        run: |
+          echo "DEB_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}" >> $GITHUB_ENV
+          echo "RPM_NAME=${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}" >> $GITHUB_ENV
       - name: Build Debian package
         run: |
-          cargo deb --profile release --target ${{ matrix.job.target }} -o target/${{ env.PKG_NAME }}.deb
+          cargo deb --profile release --target ${{ matrix.job.target }} -o target/${{ env.DEB_NAME }}.deb
       - name: Build RPM package
         run: |
-          cargo generate-rpm --profile release --target ${{ matrix.job.target }} -o target/${{ env.PKG_NAME }}.rpm
+          cargo generate-rpm --profile release --target ${{ matrix.job.target }} -o target/${{ env.RPM_NAME }}.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}
-          path: target/${{ env.PKG_NAME }}.deb
+          name: ${{ env.DEB_NAME }}
+          path: target/${{ env.DEB_NAME }}.deb
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}
-          path: target/${{ env.PKG_NAME }}.rpm
+          name: ${{ env.RPM_NAME }}
+          path: target/${{ env.RPM_NAME }}.rpm
