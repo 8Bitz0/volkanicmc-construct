@@ -62,7 +62,7 @@ jobs:
           cargo build --profile release --target ${{ matrix.job.target }}
       - name: Determine package naming
         run: |
-          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}" >> $GITHUB_ENV
+          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
           echo "DEB_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}" >> $GITHUB_ENV
           echo "RPM_NAME=${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}" >> $GITHUB_ENV
       - name: Build Tar package
@@ -70,7 +70,7 @@ jobs:
           echo "Starting at $(pwd)"
           cd target/
           echo "Changing current directory to $(pwd)"
-          
+
           export BIN_PATH=$(pwd)/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
           cp $BIN_PATH ${{ env.BIN_NAME }}
 
