@@ -67,6 +67,7 @@ jobs:
           echo "RPM_NAME=${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}" >> $GITHUB_ENV
       - name: Build Tar package
         run: |
+          echo "Starting at $(pwd)"
           cd target/
           echo "Changing current directory to $(pwd)"
           if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
