@@ -69,9 +69,9 @@ jobs:
         run: |
           cd target/
           if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
-            export BIN_PATH=$(pwd)/target/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
+            export BIN_PATH=$(pwd)/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
           else
-            export BIN_PATH=$(pwd)/target/release/${{ env.BIN_NAME }}
+            export BIN_PATH=$(pwd)/release/${{ env.BIN_NAME }}
           fi
           cp $BIN_PATH ${{ env.BIN_NAME }}
           tar -cJf ${{ env.TAR_NAME }}.tar.xz ${{ env.BIN_NAME }}
