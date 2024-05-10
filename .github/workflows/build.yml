@@ -5,7 +5,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   PKG_NAME: "volkanicmc-construct"
+  BIN_NAME: "vkconstruct"
   VERSION: "0.1.0"
+  REVISION: "1"
 
 jobs:
   build-linux:
@@ -52,13 +54,23 @@ jobs:
         run: |
           cargo --version
           rustc --version
-      - name: Install cargo-deb
+      - name: Install packaging tools
         run: |
-          cargo install cargo-deb
+          cargo install cargo-deb cargo-generate-rpm
+      - name: Build
+        run: |
+          cargo build --profile release --target ${{ matrix.job.target }}
       - name: Build Debian package
         run: |
           cargo deb --profile release --target ${{ matrix.job.target }} -o target/${{ env.PKG_NAME }}.deb
+      - name: Build RPM package
+        run: |
+          cargo generate-rpm --profile release --target ${{ matrix.job.target }} -o target/${{ env.PKG_NAME }}.rpm
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-linux-${{ matrix.job.arch }}
+          name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}
           path: target/${{ env.PKG_NAME }}.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}
+          path: target/${{ env.PKG_NAME }}.rpm

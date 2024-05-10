@@ -48,3 +48,9 @@ path = "src/main.rs"
 
 [package.metadata.deb]
 name = "volkanicmc-construct"
+
+[package.metadata.generate-rpm]
+name = "volkanicmc-construct"
+assets = [
+    { source = "target/release/vkconstruct", dest = "/usr/bin/vkconstruct", mode = "755" }
+]
