@@ -68,6 +68,7 @@ jobs:
       - name: Build Tar package
         run: |
           cd target/
+          echo "Changing current directory to $(pwd)"
           if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
             export BIN_PATH=$(pwd)/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
             echo "Non-native target. Using $BIN_PATH"
