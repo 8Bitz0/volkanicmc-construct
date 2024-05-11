@@ -1,0 +1,9 @@
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+strip = { path = "aarch64-linux-gnu-strip" }
+objcopy = { path = "aarch64-linux-gnu-objcopy" }
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+strip = { path = "arm-linux-gnueabihf-strip" }
+objcopy = { path = "arm-linux-gnueabihf-objcopy" }

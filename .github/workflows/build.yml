@@ -5,7 +5,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   PKG_NAME: "volkanicmc-construct"
+  BIN_NAME: "vkconstruct"
   VERSION: "0.1.0"
+  REVISION: "1"
 
 jobs:
   build-linux:
@@ -17,35 +19,80 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-unknown-linux-gnu,
-              arm: "none",
               on: ubuntu-20.04,
             }
           - {
               arch: aarch64,
               target: aarch64-unknown-linux-gnu,
-              arm: "raspios_lite_arm64:2023-05-03",
+              on: ubuntu-20.04,
+            }
+          - {
+              arch: armv7,
+              target: armv7-unknown-linux-gnueabihf,
               on: ubuntu-20.04,
             }
     steps:
-      - uses: pguyot/arm-runner-action@v2
-        if: matrix.job.arm != 'none'
-        with:
-          base_image: matrix.job.arm
-          commands: |
-            sudo apt update
-            sudo apt install -y build-essential
-
-      - uses: actions/checkout@v3
-      - name: Install Rustup and toolchain
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt update
+          sudo apt remove cargo rustc rust-doc
+          if [[ "${{ matrix.job.arch }}" == "aarch64" ]]; then
+            sudo apt install -y gcc-aarch64-linux-gnu
+          elif [[ "${{ matrix.job.arch }}" == "armv7" ]]; then
+            sudo apt install -y gcc-arm-linux-gnueabihf
+          fi
+      - name: Install Rustup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
+      - name: Add Rust target
+        run: |
+          if [[ "${{ matrix.job.target }}" != "x86_64-unknown-linux-gnu" ]]; then
+            rustup target add ${{ matrix.job.target }}
+          fi
+      - name: Show Rust version
+        run: |
+          cargo --version
+          rustc --version
+      - name: Install packaging tools
+        run: |
+          cargo install cargo-deb cargo-generate-rpm
       - name: Build
         run: |
-          cargo build --release --target ${{ matrix.job.target }}
-      - name: Distro packaging
+          cargo build --profile release --target ${{ matrix.job.target }}
+      - name: Determine package naming
         run: |
-          cargo deb --no-build
-      - uses: actions/upload-artifact@v3
+          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
+          echo "DEB_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}" >> $GITHUB_ENV
+          echo "RPM_NAME=${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}" >> $GITHUB_ENV
+      - name: Build Tar package
+        run: |
+          echo "Starting at $(pwd)"
+          cd target/
+          echo "Changing current directory to $(pwd)"
+
+          export BIN_PATH=$(pwd)/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
+          cp $BIN_PATH ${{ env.BIN_NAME }}
+
+          tar -cJf ${{ env.TAR_NAME }}.tar.xz ${{ env.BIN_NAME }}
+
+          rm ${{ env.BIN_NAME }}
+          cd ../
+      - name: Build Debian package
+        run: |
+          cargo deb --profile release --target ${{ matrix.job.target }} -o target/${{ env.DEB_NAME }}.deb
+      - name: Build RPM package
+        run: |
+          cargo generate-rpm --profile release --target ${{ matrix.job.target }} -o target/${{ env.RPM_NAME }}.rpm
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ matrix.job.os }}-${{ matrix.job.arch }}
-          path: target/debian/${{ env.PKG_NAME }}-*.deb
+          name: ${{ env.TAR_NAME }}
+          path: target/${{ env.TAR_NAME }}.tar.xz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DEB_NAME }}
+          path: target/${{ env.DEB_NAME }}.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.RPM_NAME }}
+          path: target/${{ env.RPM_NAME }}.rpm
