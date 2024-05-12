@@ -62,7 +62,7 @@ jobs:
           cargo build --profile release --target ${{ matrix.job.target }}
       - name: Determine package naming
         run: |
-          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
+          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_linux-${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
           echo "DEB_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.arch }}" >> $GITHUB_ENV
           echo "RPM_NAME=${{ env.PKG_NAME }}-${{ env.VERSION }}-${{ env.REVISION }}.${{ matrix.job.arch }}" >> $GITHUB_ENV
       - name: Build Tar package
@@ -96,3 +96,55 @@ jobs:
         with:
           name: ${{ env.RPM_NAME }}
           path: target/${{ env.RPM_NAME }}.rpm
+
+  build-mac:
+    name: Build for Mac
+    runs-on: ${{ matrix.job.on }}
+    strategy:
+      matrix:
+        job:
+          - {
+              arch: aarch64,
+              target: aarch64-apple-darwin,
+              on: macos-14,
+            }
+          - {
+              arch: x86_64,
+              target: x86_64-apple-darwin,
+              on: macos-14,
+            }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
+      - name: Add Rust target
+        run: |
+          rustup target add ${{ matrix.job.target }}
+      - name: Show Rust version
+        run: |
+          cargo --version
+          rustc --version
+      - name: Build
+        run: |
+          cargo build --profile release --target ${{ matrix.job.target }}
+      - name: Determine package naming
+        run: |
+          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_mac-${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
+      - name: Build Tar package
+        run: |
+          echo "Starting at $(pwd)"
+          cd target/
+          echo "Changing current directory to $(pwd)"
+
+          export BIN_PATH=$(pwd)/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}
+          cp $BIN_PATH ${{ env.BIN_NAME }}
+
+          tar -cJf ${{ env.TAR_NAME }}.tar.xz ${{ env.BIN_NAME }}
+
+          rm ${{ env.BIN_NAME }}
+          cd ../
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TAR_NAME }}
+          path: target/${{ env.TAR_NAME }}.tar.xz
