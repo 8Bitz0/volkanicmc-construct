@@ -148,3 +148,44 @@ jobs:
         with:
           name: ${{ env.TAR_NAME }}
           path: target/${{ env.TAR_NAME }}.tar.xz
+
+  build-windows:
+    name: Build for Windows
+    runs-on: ${{ matrix.job.on }}
+    strategy:
+      matrix:
+        job:
+          - {
+              arch: x86_64,
+              target: x86_64-pc-windows-msvc,
+              on: windows-2022,
+            }
+          - {
+              arch: i686,
+              target: i686-pc-windows-msvc,
+              on: windows-2022,
+            }
+    steps:
+      - uses: hecrj/setup-rust-action@v2
+        with:
+          targets: ${{ matrix.job.target }}
+      - uses: actions/checkout@v4
+      - name: Show Rust version
+        run: |
+          cargo --version
+          rustc --version
+      - name: Build
+        run: |
+          cargo build --profile release --target ${{ matrix.job.target }}
+      - name: Determine package naming
+        shell: pwsh
+        run: |
+          "EXE_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Copy executable
+        shell: pwsh
+        run: |
+          cp target/${{ matrix.job.target }}/release/${{ env.BIN_NAME }}.exe target/${{ env.EXE_NAME }}.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.EXE_NAME }}
+          path: target/${{ env.EXE_NAME }}.exe
