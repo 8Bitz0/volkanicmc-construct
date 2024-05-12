@@ -3,6 +3,7 @@ name = "volkanicmc-construct"
 version = "0.1.0"
 authors = ["Alexander Hansen <alex@bitzmc.com>"]
 edition = "2021"
+rust-version = "1.70"
 description = "Setup Minecraft servers by description"
 repository = "https://github.com/8Bitz0/volkanicmc-construct"
 license = "GPL-3.0"
