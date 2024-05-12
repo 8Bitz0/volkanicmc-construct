@@ -106,6 +106,7 @@ jobs:
           - {
               arch: aarch64,
               os: mac,
+              host: aarch64-apple-darwin,
               target: aarch64-apple-darwin,
               version: stable,
               on: macos-14,
@@ -113,6 +114,7 @@ jobs:
           - {
               arch: x86_64,
               os: mac,
+              host: aarch64-apple-darwin,
               target: x86_64-apple-darwin,
               version: stable,
               on: macos-14,
@@ -120,6 +122,7 @@ jobs:
           - {
               arch: x86_64,
               os: maclegacy,
+              host: aarch64-apple-darwin,
               target: x86_64-apple-darwin,
               version: 1.73,
               on: macos-11,
@@ -127,10 +130,10 @@ jobs:
     steps:
       - name: Install Rustup
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --default-toolchain ${{ matrix.job.version }}-${{ matrix.job.host }}
       - name: Add Rust target
         run: |
-          rustup target add ${{ matrix.job.version }}-${{ matrix.job.target }}
+          rustup target add ${{ matrix.job.target }}
       - uses: actions/checkout@v4
       - name: Show Rust version
         run: |
