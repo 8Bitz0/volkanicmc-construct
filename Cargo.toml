@@ -55,9 +55,3 @@ name = "volkanicmc-construct"
 assets = [
     { source = "target/release/vkconstruct", dest = "/usr/bin/vkconstruct", mode = "755" }
 ]
-
-[target.i686-pc-windows-msvc]
-rustflags = ["-C", "target-feature=+crt-static"]
-
-[target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "target-feature=+crt-static"]
