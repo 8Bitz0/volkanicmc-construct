@@ -105,22 +105,36 @@ jobs:
         job:
           - {
               arch: aarch64,
+              os: mac,
+              host: aarch64-apple-darwin,
               target: aarch64-apple-darwin,
+              version: stable,
               on: macos-14,
             }
           - {
               arch: x86_64,
+              os: mac,
+              host: aarch64-apple-darwin,
               target: x86_64-apple-darwin,
+              version: stable,
               on: macos-14,
             }
+          - {
+              arch: x86_64,
+              os: maclegacy,
+              host: x86_64-apple-darwin,
+              target: x86_64-apple-darwin,
+              version: 1.73,
+              on: macos-11,
+            }
     steps:
-      - uses: actions/checkout@v4
       - name: Install Rustup
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile=minimal --default-toolchain ${{ matrix.job.version }}-${{ matrix.job.host }}
       - name: Add Rust target
         run: |
           rustup target add ${{ matrix.job.target }}
+      - uses: actions/checkout@v4
       - name: Show Rust version
         run: |
           cargo --version
@@ -130,7 +144,7 @@ jobs:
           cargo build --profile release --target ${{ matrix.job.target }}
       - name: Determine package naming
         run: |
-          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_mac-${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
+          echo "TAR_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_${{ matrix.job.os }}-${{ matrix.job.arch }}-bin" >> $GITHUB_ENV
       - name: Build Tar package
         run: |
           echo "Starting at $(pwd)"
