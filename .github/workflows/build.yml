@@ -172,16 +172,19 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-pc-windows-msvc,
+              version: "1.73",
               on: windows-2022,
             }
           - {
               arch: i686,
               target: i686-pc-windows-msvc,
+              version: "1.73",
               on: windows-2022,
             }
     steps:
       - uses: hecrj/setup-rust-action@v2
         with:
+          rust-version: "${{ matrix.job.version }}"
           targets: ${{ matrix.job.target }}
       - uses: actions/checkout@v4
       - name: Show Rust version
