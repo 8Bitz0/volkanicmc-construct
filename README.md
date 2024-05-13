@@ -16,6 +16,13 @@ Command-line usage can be provided with the following command:
 vkconstruct help
 ```
 
+## Compatibility
+- Windows: Windows 7 SP1 (32-bit or 64-bit) or later
+- maccOS: 10.9 or later (10.9 - 10.12 requires the "maclegacy" binary)
+- Linux: Varies based on distribution
+
+NOTE: These only apply to the provided binaries.
+
 ## Getting started
 
 ### Create a base template
