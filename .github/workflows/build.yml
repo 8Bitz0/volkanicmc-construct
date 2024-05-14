@@ -204,7 +204,7 @@ jobs:
           "MSI_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-installer" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Build Windows MSI installer
         run: |
-          cargo wix -o target/${{ env.MSI_NAME }}.msi
+          cargo wix --target ${{ matrix.job.target }} -o target/${{ env.MSI_NAME }}.msi
       - name: Copy executable
         shell: pwsh
         run: |
