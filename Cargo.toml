@@ -6,7 +6,7 @@ edition = "2021"
 rust-version = "1.70"
 description = "Setup Minecraft servers by description"
 repository = "https://github.com/8Bitz0/volkanicmc-construct"
-license = "GPL-3.0"
+license = "MIT"
 keywords = ["minecraft"]
 categories = ["command-line-utilities"]
 
