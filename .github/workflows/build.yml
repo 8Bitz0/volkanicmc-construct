@@ -172,13 +172,13 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-pc-windows-msvc,
-              version: "1.73",
+              version: "1.74",
               on: windows-2022,
             }
           - {
               arch: i686,
               target: i686-pc-windows-msvc,
-              version: "1.73",
+              version: "1.74",
               on: windows-2022,
             }
     steps:
@@ -191,6 +191,9 @@ jobs:
         run: |
           cargo --version
           rustc --version
+      - name: Install packaging tools
+        run: |
+          cargo install cargo-wix
       - name: Build
         run: |
           cargo build --profile release --target ${{ matrix.job.target }}
@@ -198,6 +201,10 @@ jobs:
         shell: pwsh
         run: |
           "EXE_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "MSI_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-installer" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build Windows MSI installer
+        run: |
+          cargo wix --target ${{ matrix.job.target }} -o target/${{ env.MSI_NAME }}.msi
       - name: Copy executable
         shell: pwsh
         run: |
@@ -206,3 +213,7 @@ jobs:
         with:
           name: ${{ env.EXE_NAME }}
           path: target/${{ env.EXE_NAME }}.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.MSI_NAME }}
+          path: target/${{ env.MSI_NAME }}.msi
