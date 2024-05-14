@@ -98,12 +98,12 @@
                     <Component Id='License' Guid='*'>
                         <File Id='LicenseFile'
                             DiskId='1'
-                            Source='LICENSE'
+                            Source='wix\License.rtf'
                             KeyPath='yes'/>
                     </Component>
                     
                     <Directory Id='Bin' Name='bin'>
-                        <Component Id='Path' Guid='528EBDDB-9A34-47CF-AED4-322D07E919E1' KeyPath='yes'>
+                        <Component Id='Path' Guid='D253B98E-80ED-4405-9035-C6C9D4D0B8C4' KeyPath='yes'>
                             <Environment
                                 Id='PATH'
                                 Name='PATH'
