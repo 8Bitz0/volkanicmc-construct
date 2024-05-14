@@ -172,13 +172,13 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-pc-windows-msvc,
-              version: "1.73",
+              version: "1.74",
               on: windows-2022,
             }
           - {
               arch: i686,
               target: i686-pc-windows-msvc,
-              version: "1.73",
+              version: "1.74",
               on: windows-2022,
             }
     steps:
