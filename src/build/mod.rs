@@ -91,17 +91,13 @@ pub async fn build(
                 .await
                 .map_err(BuildError::BuildInfo)?;
 
-            if build_info.job_progress == build_info.jobs.len() && !build_info.jobs.is_empty() {
-                warn!("Build is already present.");
+            warn!("Build is already present.");
 
-                if force {
-                    warn!("Rebuild forced")
-                } else {
-                    error!("Please specify the \"--force\" flag to rebuild.");
-                    return Err(BuildError::BuildPresent);
-                }
+            if force {
+                warn!("Rebuild forced")
             } else {
-                warn!("Incomplete build found. Rebuilding...");
+                error!("Please specify the \"--force\" flag to rebuild.");
+                return Err(BuildError::BuildPresent);
             }
 
             build_info.jobs = jobs;
