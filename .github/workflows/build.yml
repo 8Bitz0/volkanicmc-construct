@@ -1,9 +1,20 @@
 name: Release
+
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      publish:
+        type: boolean
+        default: true
+      upload-tag:
+        type: string
+        default: "main"
   
 env:
   CARGO_TERM_COLOR: always
+  TAG_NAME: ${{ inputs.upload-tag }}
+  PUBLISH: ${{ inputs.publish }}
   PKG_NAME: "volkanicmc-construct"
   BIN_NAME: "vkconstruct"
   VERSION: "0.1.0"
@@ -96,6 +107,16 @@ jobs:
         with:
           name: ${{ env.RPM_NAME }}
           path: target/${{ env.RPM_NAME }}.rpm
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        if: env.PUBLISH == 'true'
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            target/${{ env.TAR_NAME }}.tar.xz
+            target/${{ env.DEB_NAME }}.deb
+            target/${{ env.RPM_NAME }}.rpm
 
   build-mac:
     name: Build for Mac
@@ -162,6 +183,14 @@ jobs:
         with:
           name: ${{ env.TAR_NAME }}
           path: target/${{ env.TAR_NAME }}.tar.xz
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        if: env.PUBLISH == 'true'
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            target/${{ env.TAR_NAME }}.tar.xz  
 
   build-windows:
     name: Build for Windows
@@ -217,3 +246,12 @@ jobs:
         with:
           name: ${{ env.MSI_NAME }}
           path: target/${{ env.MSI_NAME }}.msi
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        if: env.PUBLISH == 'true'
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            target/${{ env.EXE_NAME }}.exe
+            target/${{ env.MSI_NAME }}.msi
