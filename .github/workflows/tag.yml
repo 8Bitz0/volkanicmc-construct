@@ -16,6 +16,7 @@ jobs:
       upload-tag: ${{ github.ref_name }}
   run-docker:
     uses: ./.github/workflows/docker.yml
+    secrets: inherit
     with:
       push: true
       stable: true
