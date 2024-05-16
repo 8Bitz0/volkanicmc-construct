@@ -14,3 +14,9 @@ jobs:
     with:
       publish: true
       upload-tag: ${{ github.ref_name }}
+  run-docker:
+    uses: ./.github/workflows/docker.yml
+    with:
+      push: true
+      stable: true
+      tag: ${{ github.ref_name }}

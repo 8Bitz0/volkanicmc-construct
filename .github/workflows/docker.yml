@@ -1,14 +1,24 @@
 name: Deploy Images to GHCR
 
+on:
+  workflow_call:
+    inputs:
+      push:
+        type: boolean
+        default: false
+      stable:
+        type: boolean
+        required: true
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+
 env:
   DOTNET_VERSION: '6.0.x'
-
-on:
-  workflow_run:
-    workflows: [Rust]
-    branches: [main]
-    types: [completed]
-  workflow_dispatch:
+  PUSH: ${{ inputs.push }}
+  STABLE: ${{ inputs.stable }}
+  TAG: ${{ inputs.tag }}
 
 jobs:
   push-store-image:
@@ -26,13 +36,25 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GHCR_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: 'Build and Push Docker Images'
+        if: env.PUSH == 'true'
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
-            -t ghcr.io/8bitz0/vkconstruct:latest \
-            -f ./containers/Containerfile.ubuntu \
-            --push \
-            .
+          if [[ "${{ env.STABLE }}" == "true" ]]; then
+            docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+              -t ghcr.io/8bitz0/vkconstruct:latest \
+              -t ghcr.io/8bitz0/vkconstruct:stable \
+              -t ghcr.io/8bitz0/vkconstruct:${{ env.TAG }} \
+              -f ./containers/Containerfile.ubuntu \
+              --push \
+              .
+          else
+            docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+              -t ghcr.io/8bitz0/vkconstruct:latest \
+              -t ghcr.io/8bitz0/vkconstruct:${{ env.TAG }} \
+              -f ./containers/Containerfile.ubuntu \
+              --push \
+              .
+          fi
