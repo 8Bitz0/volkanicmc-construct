@@ -10,11 +10,15 @@ on:
       upload-tag:
         type: string
         default: "main"
+      prerelease:
+        type: boolean
+        required: true
   
 env:
   CARGO_TERM_COLOR: always
   TAG_NAME: ${{ inputs.upload-tag }}
   PUBLISH: ${{ inputs.publish }}
+  PRERELEASE: ${{ inputs.prerelease }}
   PKG_NAME: "volkanicmc-construct"
   BIN_NAME: "vkconstruct"
   VERSION: "0.1.0"
@@ -111,7 +115,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: env.PUBLISH == 'true'
         with:
-          prerelease: true
+          prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
           token: ${{ secrets.RELEASE_TOKEN }}
           files: |
@@ -188,7 +192,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: env.PUBLISH == 'true'
         with:
-          prerelease: true
+          prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
           token: ${{ secrets.RELEASE_TOKEN }}
           files: |
@@ -252,7 +256,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: env.PUBLISH == 'true'
         with:
-          prerelease: true
+          prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
           token: ${{ secrets.RELEASE_TOKEN }}
           files: |
