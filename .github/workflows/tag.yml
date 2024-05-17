@@ -1,0 +1,24 @@
+name: Build on tag
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+
+jobs:
+  run-build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      publish: true
+      upload-tag: ${{ github.ref_name }}
+      prerelease: false
+  run-docker:
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    with:
+      push: true
+      stable: true
+      tag: ${{ github.ref_name }}
