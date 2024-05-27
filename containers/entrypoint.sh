@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -e
+set -o pipefail
+
 # Make sure the "USER" variable is set correctly
 export USER=$(whoami)
 
