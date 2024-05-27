@@ -424,7 +424,6 @@ pub async fn create_jobs(
                     })
                 }
             }
-            template::resource::GenericResource::Modrinth { identity: _ } => todo!(),
         }
     }
 
