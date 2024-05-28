@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path;
 
@@ -13,7 +14,7 @@ pub use parse::ParseError;
 
 pub const TEMPLATE_FORMAT: usize = 1;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub struct Template {
     #[serde(rename = "template-format")]
     pub template_format: usize,

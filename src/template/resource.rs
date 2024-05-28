@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path;
 
@@ -5,13 +6,13 @@ use crate::resources;
 
 use super::{jdk_args::JdkArguments, var::VarFormat};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum ModrinthProject {
     Id(String),
     Slug(String),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum ServerRuntimeResource {
     #[serde(rename = "jdk")]
     Jdk {
@@ -23,7 +24,7 @@ pub enum ServerRuntimeResource {
     },
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum ServerExecResource {
     #[serde(rename = "java")]
     Java {
@@ -33,7 +34,7 @@ pub enum ServerExecResource {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct ArchiveInfo {
     #[serde(rename = "internal-path")]
     pub inner_path: path::PathBuf,
@@ -44,7 +45,7 @@ pub struct ArchiveInfo {
     pub post_remove: Vec<path::PathBuf>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum GenericResource {
     /// A remote file to download via provided URL
     #[serde(rename = "remote")]

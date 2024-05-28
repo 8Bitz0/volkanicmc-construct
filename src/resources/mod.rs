@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub mod conf;
@@ -13,7 +14,7 @@ pub enum ResourceLoadError {
     YamlParse(serde_yaml::Error),
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
 pub enum ArchiveFormat {
     #[serde(rename = "tar.gz")]
     TarGz,
