@@ -7,12 +7,6 @@ use crate::resources;
 use super::{jdk_args::JdkArguments, var::VarFormat};
 
 #[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
-pub enum ModrinthProject {
-    Id(String),
-    Slug(String),
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum ServerRuntimeResource {
     #[serde(rename = "jdk")]
     Jdk {
@@ -100,7 +94,4 @@ pub enum GenericResource {
         #[serde(rename = "template-path")]
         template_path: path::PathBuf,
     },
-    /// Modrinth mod
-    #[serde(rename = "modrinth")]
-    Modrinth { identity: ModrinthProject },
 }
