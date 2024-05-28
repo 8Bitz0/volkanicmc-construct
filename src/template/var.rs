@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, info};
@@ -5,7 +6,7 @@ use tracing::{debug, info};
 pub type EnvMap = HashMap<String, String>;
 pub type VarMap = HashMap<String, String>;
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub enum Var {
     #[serde(rename = "static")]
     Static { name: String, value: String },
@@ -17,7 +18,7 @@ pub enum Var {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub enum VarFormat {
     #[serde(rename = "dollar-curly")]
     DollarCurly,

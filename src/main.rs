@@ -59,6 +59,8 @@ enum TemplateCommand {
     Embed { path: path::PathBuf },
     /// Prints a basic template
     Create,
+    /// Generate a JSON schema for templates
+    GenerateSchema,
 }
 
 async fn init_log() {
@@ -211,6 +213,11 @@ async fn main() {
                         }
                     }
                 );
+            }
+            TemplateCommand::GenerateSchema => {
+                let schema = schemars::schema_for!(template::Template);
+
+                println!("{}", serde_jsonc::to_string(&schema).unwrap());
             }
         },
         Command::ExecScript { format } => {

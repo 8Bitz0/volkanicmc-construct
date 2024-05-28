@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 const AIKARS_FLAGS: &[&str] = &[
@@ -23,7 +24,7 @@ const AIKARS_FLAGS: &[&str] = &[
     "-Daikars.new.flags=true",
 ];
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum JdkPreset {
     #[serde(rename = "aikars")]
     Aikars,
