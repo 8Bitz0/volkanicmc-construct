@@ -21,7 +21,7 @@ env:
   PRERELEASE: ${{ inputs.prerelease }}
   PKG_NAME: "volkanicmc-construct"
   BIN_NAME: "vkconstruct"
-  VERSION: "0.1.1"
+  VERSION: "0.2.0"
   REVISION: "1"
 
 jobs:
