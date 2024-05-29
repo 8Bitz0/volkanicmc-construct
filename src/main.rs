@@ -12,6 +12,7 @@ mod template;
 mod vkstore;
 
 #[derive(Debug, Parser)]
+#[command(version, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Command,
