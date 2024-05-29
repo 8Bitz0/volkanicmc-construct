@@ -37,8 +37,8 @@ pub enum ExecutionError {
 /// Removes that weird "\\?\" prefix from Windows paths
 ///
 /// Hacky solution for a hacky operating system.
-pub async fn winpath_fix(path: String) -> String {
-    path.replace("\\\\?\\", "")
+pub async fn winpath_fix(path: impl std::fmt::Display) -> String {
+    path.to_string().replace("\\\\?\\", "")
 }
 
 pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {

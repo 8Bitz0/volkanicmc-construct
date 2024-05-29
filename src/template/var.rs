@@ -46,8 +46,12 @@ pub enum VarProcessError {
     RawVarWithoutValue,
 }
 
-pub async fn string_replace(value: String, vars: &VarMap, format: VarFormat) -> String {
-    let mut result = value;
+pub async fn string_replace(
+    value: impl std::fmt::Display,
+    vars: &VarMap,
+    format: VarFormat,
+) -> String {
+    let mut result = value.to_string();
     for v in vars {
         let fmtd = format.formatted(v.0).await;
 
