@@ -54,7 +54,7 @@ pub async fn download_progress(
     store: vkstore::VolkanicStore,
     url: &str,
     verification: Verification,
-    name: String,
+    name: impl std::fmt::Display,
     user_agent: Option<String>,
 ) -> Result<path::PathBuf, DownloadError> {
     let p = store.downloads_path.join(match &verification {
