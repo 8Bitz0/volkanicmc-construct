@@ -405,6 +405,16 @@ pub async fn create_jobs(
                 use_variables,
                 template_path,
             } => {
+                // Pre-checks
+                let include = vkinclude::VolkanicInclude::new().await;
+                if include.get(include_id).await.is_none() {
+                    error!("Did not find \"{}\" in include directory.", include_id);
+                    return Err(JobError::NotAvailableInIncludeFolder(
+                        include_id.to_string(),
+                    ));
+                }
+
+                // Push job
                 jobs.push(Job {
                     title: "Copy additional resource".into(),
                     action: JobAction::CopyFromInclude {
