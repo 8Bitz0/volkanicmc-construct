@@ -42,17 +42,20 @@ pub async fn winpath_fix(path: impl std::fmt::Display) -> String {
 }
 
 pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
+    // Check if build information exists
     if !BuildInfo::exists(store).await {
         error!("There's no build in the current directory!");
         return Err(ExecutionError::BuildNotFound);
     }
 
+    // Parse build information
     let build_info = BuildInfo::get(store)
         .await
         .map_err(ExecutionError::BuildInfoRetrieval)?;
 
     let exec_info = build_info.exec.ok_or(ExecutionError::BuildNotFound)?;
 
+    // Check if the build info requirements matches the host
     let arch = if let Some(a) = hostinfo::Arch::get().await {
         a
     } else {
@@ -80,50 +83,40 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
         return Err(ExecutionError::UnknownArchitecture);
     }
 
+    // Check if the build directory exists
     if !store.build_path.is_dir() {
         error!("Build directory is not present");
         return Err(ExecutionError::BuildNotFound);
     }
 
-    if !exec_info.runtime_exec_path.is_file() {
+    // Check if the executable exists
+    if !exec_info.exec_path.is_file() {
         error!(
             "Runtime executable does not exist at path: {}",
-            exec_info.runtime_exec_path.display()
+            exec_info.exec_path.display()
         );
         return Err(ExecutionError::RuntimeExecNotFound(
-            exec_info.runtime_exec_path.clone(),
+            exec_info.exec_path.clone(),
         ));
     }
 
-    let full_runtime_exec_path = exec_info.runtime_exec_path.canonicalize().map_err(|_| {
-        ExecutionError::PathCanonicalizationFailed(exec_info.runtime_exec_path.clone())
-    })?;
-
-    let full_server_exec_path = store
-        .build_path
-        .join(&exec_info.server_jar_path)
+    // Get the absolute path of the executable. This is required as using the relative
+    // path to the executable will stop working after changing the current directory.
+    let full_runtime_exec_path = exec_info
+        .exec_path
         .canonicalize()
-        .map_err(|_| {
-            ExecutionError::PathCanonicalizationFailed(exec_info.server_jar_path.clone())
-        })?;
+        .map_err(|_| ExecutionError::PathCanonicalizationFailed(exec_info.exec_path.clone()))?;
 
     debug!(
-        "Absolute path to runtime executable: {}",
+        "Absolute path to executable: {}",
         full_runtime_exec_path.display()
-    );
-    debug!(
-        "Absolute path to server executable: {}",
-        full_server_exec_path.display()
     );
 
     let command: (String, Vec<String>) = {
         #[cfg(not(target_os = "windows"))]
         {
             let mut runtime_args = vec![];
-            runtime_args.extend(exec_info.runtime_args.clone());
-            runtime_args.push("-jar".to_string());
-            runtime_args.push(full_server_exec_path.to_string_lossy().to_string());
-            runtime_args.extend(exec_info.server_args);
+            runtime_args.extend(exec_info.args.clone());
 
             (
                 full_runtime_exec_path.to_string_lossy().to_string(),
@@ -133,14 +126,11 @@ pub async fn run(store: &VolkanicStore) -> Result<(), ExecutionError> {
         #[cfg(target_os = "windows")]
         {
             let mut runtime_args = vec![];
+            // Tells `cmd.exe` to execute a command
             runtime_args.push("/C".to_string());
             runtime_args
                 .push(winpath_fix(full_runtime_exec_path.to_string_lossy().to_string()).await);
-            runtime_args.extend(exec_info.runtime_args.clone());
-            runtime_args.push("-jar".to_string());
-            runtime_args
-                .push(winpath_fix(full_server_exec_path.to_string_lossy().to_string()).await);
-            runtime_args.extend(exec_info.server_args);
+            runtime_args.extend(exec_info.args.clone());
 
             (resources::conf::WIN_SHELL_CMD.to_string(), runtime_args)
         }

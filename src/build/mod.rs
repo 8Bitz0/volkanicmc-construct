@@ -8,7 +8,7 @@ mod prepare_jdk;
 use crate::exec;
 use crate::hostinfo;
 use crate::resources::{self, JdkConfig};
-use crate::template::{self, jdk_args::JdkArguments};
+use crate::template;
 use crate::vkstore;
 
 pub use buildinfo::{BuildInfo, BuildInfoError};
@@ -31,8 +31,6 @@ pub enum BuildError {
     BuildPresent,
     #[error("Variable processing error: {0}")]
     VarProcess(template::var::VarProcessError),
-    #[error("Custom arguments in use")]
-    CustomArgumentsInUse,
 }
 
 pub async fn build(
@@ -40,7 +38,6 @@ pub async fn build(
     store: vkstore::VolkanicStore,
     force: bool,
     user_vars_raw: Vec<String>,
-    allow_custom_jvm_args: bool,
     additional_jvm_args: Vec<String>,
     prevent_verify: bool,
 ) -> Result<(), BuildError> {
@@ -119,14 +116,6 @@ pub async fn build(
         }
     };
 
-    let server_args: Option<Vec<String>> = match &template.server {
-        template::resource::ServerExecResource::Java {
-            url: _,
-            sha512: _,
-            args: params,
-        } => Some(params.split(' ').map(|s| s.to_string()).collect()),
-    };
-
     job::execute_jobs(store.clone(), &mut build_info)
         .await
         .map_err(BuildError::Job)?;
@@ -135,67 +124,37 @@ pub async fn build(
 
     debug!("Setting build execution info");
 
-    build_info.exec = Some(exec::BuildExecInfo {
-        arch: if let Some(a) = hostinfo::Arch::get().await {
-            a
-        } else {
-            return Err(BuildError::UnknownArchitecture);
+    build_info.exec = Some(match template.runtime {
+        template::resource::ServerRuntimeResource::Jdk {
+            version: _,
+            jar_path,
+            jdk_args,
+            server_args,
+        } => exec::BuildExecInfo {
+            arch: if let Some(a) = hostinfo::Arch::get().await {
+                a
+            } else {
+                return Err(BuildError::UnknownArchitecture);
+            },
+            os: if let Some(a) = hostinfo::Os::get().await {
+                a
+            } else {
+                return Err(BuildError::UnknownPlatform);
+            },
+            exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
+            args: {
+                let mut args: Vec<String> = vec![];
+
+                args.extend(jdk_args);
+                args.extend(additional_jvm_args);
+
+                args.push("-jar".to_string());
+                args.push(jar_path.to_string_lossy().to_string());
+                args.push(server_args.join(" "));
+
+                args
+            },
         },
-        os: if let Some(a) = hostinfo::Os::get().await {
-            a
-        } else {
-            return Err(BuildError::UnknownPlatform);
-        },
-        runtime_args: match &template.runtime {
-            template::resource::ServerRuntimeResource::Jdk {
-                version: _,
-                additional_args,
-            } => {
-                if !additional_jvm_args.is_empty() {
-                    warn!(
-                        "Additional user JVM arguments are in use (\"{}\")",
-                        additional_jvm_args.join(" ")
-                    );
-                }
-
-                match additional_args.clone() {
-                    Some(args) => {
-                        let mut raw_args = additional_jvm_args;
-
-                        raw_args.extend(match args {
-                            JdkArguments::Custom(a) => {
-                                if !allow_custom_jvm_args {
-                                    error!("This template uses custom JVM arguments (which may be dangerous). Please use the \"--allow-custom-jvm-args\" flag to build anyway.");
-                                    return Err(BuildError::CustomArgumentsInUse);
-                                }
-
-                                warn!(
-                                    "Additional template JVM arguments are in use (\"{}\")",
-                                    a.join(" ")
-                                );
-
-                                a
-                            },
-                            JdkArguments::Preset(p) => {
-                                info!("Template has requested a JVM argument preset");
-                                debug!("Template JVM argument preset: {}", p.get_args().await.join(" "));
-
-                                p.get_args().await
-                            },
-                        });
-
-                        raw_args
-                    }
-                    None => additional_jvm_args,
-                }
-            }
-        },
-        runtime_exec_path: store.runtime_path.join(resources::conf::JDK_BIN_FILE),
-        server_args: match server_args {
-            Some(args) => args,
-            None => vec![],
-        },
-        server_jar_path: resources::conf::SERVER_SOFTWARE_FILE.into(),
     });
 
     build_info.update().await.map_err(BuildError::BuildInfo)?;
