@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/8Bitz0/volkanicmc-construct/main/schemas/format-1_draft1.json",
-  "template-format": 1,
+  "template-format": 2,
   "name": "Beta 1.7.3 Vanilla",
   "description": "Server running Minecraft Beta 1.7.3",
   "author": "VolkanicMC",
@@ -19,17 +18,20 @@
   ],
   "runtime": {
     "jdk": {
-      "version": "8"
-    }
-  },
-  "server": {
-    "java": {
-      "url": "http://files.betacraft.uk/server-archive/beta/b1.7.3.jar",
-      "sha512": "6728a8f60c2d2b40878d11c8cc986f259816314cad3b685180420faba6928ad064efb355789c4f50625f7eaa2b577b9376252f0e20cab0cb865cb1a47b14e930",
-      "args": "nogui"
+      "version": "8",
+      "jar-path": "server.jar",
+      "jdk-args": [],
+      "server-args": ["nogui"]
     }
   },
   "resources": [
+    {
+      "remote": {
+        "url": "http://files.betacraft.uk/server-archive/beta/b1.7.3.jar",
+        "sha512": "6728a8f60c2d2b40878d11c8cc986f259816314cad3b685180420faba6928ad064efb355789c4f50625f7eaa2b577b9376252f0e20cab0cb865cb1a47b14e930",
+        "template-path": "server.jar"
+      }
+    },
     {
       "include": {
         "id": "b1-7-vanilla.properties",

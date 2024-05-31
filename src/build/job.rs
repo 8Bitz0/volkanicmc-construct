@@ -5,7 +5,7 @@ use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info};
 
-use crate::resources::{self, Jdk, JdkConfig};
+use crate::resources::{Jdk, JdkConfig};
 use crate::template::{self, vkinclude};
 use crate::vkstore;
 
@@ -287,7 +287,9 @@ pub async fn create_jobs(
     match &template.runtime {
         template::resource::ServerRuntimeResource::Jdk {
             version,
-            additional_args: _,
+            jar_path: _,
+            jdk_args: _,
+            ..
         } => {
             jobs.push(Job {
                 title: "Prepare JDK".into(),
@@ -300,31 +302,6 @@ pub async fn create_jobs(
                         }
                     },
                     no_verify,
-                },
-            });
-        }
-    }
-
-    // Setup server software
-    match &template.server {
-        template::resource::ServerExecResource::Java {
-            url,
-            sha512,
-            args: _,
-        } => {
-            jobs.push(Job {
-                title: "Download server software".into(),
-                action: JobAction::WriteFileRemote {
-                    path: resources::conf::SERVER_SOFTWARE_FILE.into(),
-                    url: url.clone(),
-                    user_agent: None,
-                    override_name: None,
-                    archive: None,
-                    sha512: if no_verify {
-                        None
-                    } else {
-                        Some(sha512.clone())
-                    },
                 },
             });
         }

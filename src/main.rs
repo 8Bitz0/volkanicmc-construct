@@ -30,9 +30,6 @@ enum Command {
         force: bool,
         #[arg(short = 'v', long)]
         user_vars: Vec<String>,
-        /// Allow custom JVM arguments
-        #[arg(long)]
-        allow_custom_jvm_args: bool,
         /// Add additional JVM arguments to place before the template's JVM arguments
         #[arg(short = 'j', long, value_parser, num_args = 1.., value_delimiter = ' ')]
         additional_jvm_args: Vec<String>,
@@ -94,7 +91,6 @@ async fn main() {
             path,
             force,
             user_vars,
-            allow_custom_jvm_args,
             additional_jvm_args,
             no_verify,
         } => {
@@ -122,7 +118,6 @@ async fn main() {
                 store,
                 force,
                 user_vars,
-                allow_custom_jvm_args,
                 additional_jvm_args,
                 no_verify,
             )

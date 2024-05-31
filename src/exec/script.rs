@@ -20,24 +20,20 @@ pub async fn to_script<P: AsRef<Path>>(
     match format {
         ExecScriptType::Bash => {
             format!(
-                "{}\n\nexport JDK_PATH=$(realpath {})\ncd {} && exec $JDK_PATH {} -jar {} {}",
+                "{}\n\nexport JDK_PATH=$(realpath {})\ncd {} && exec $JDK_PATH {}",
                 BASH_SHEBANG,
-                exec_info.runtime_exec_path.to_string_lossy(),
+                exec_info.exec_path.to_string_lossy(),
                 build_path.as_ref().to_string_lossy(),
-                exec_info.runtime_args.join(" "),
-                exec_info.server_jar_path.to_string_lossy(),
-                exec_info.server_args.join(" "),
+                exec_info.args.join(" "),
             )
         }
         ExecScriptType::Batch => {
             format!(
-                "{}\n\nset \"JDK_PATH=%~dp0\\{}\"\ncd {}\n\"%JDK_PATH%\" {} -jar {} {}",
+                "{}\n\nset \"JDK_PATH=%~dp0\\{}\"\ncd {}\n\"%JDK_PATH%\" {}",
                 BATCH_ECHO_OFF,
-                exec_info.runtime_exec_path.to_string_lossy(),
+                exec_info.exec_path.to_string_lossy(),
                 build_path.as_ref().to_string_lossy(),
-                exec_info.runtime_args.join(" "),
-                exec_info.server_jar_path.to_string_lossy(),
-                exec_info.server_args.join(" "),
+                exec_info.args.join(" "),
             )
         }
     }
@@ -52,10 +48,13 @@ mod tests {
         let exec_info = super::BuildExecInfo {
             arch: crate::hostinfo::Arch::Amd64,
             os: crate::hostinfo::Os::Linux,
-            runtime_exec_path: std::path::PathBuf::from(".volkanic/runtime/java"),
-            server_jar_path: std::path::PathBuf::from("server.jar"),
-            runtime_args: vec!["-Xms512M".to_string(), "-Xmx1024M".to_string()],
-            server_args: vec!["-nogui".to_string()],
+            exec_path: std::path::PathBuf::from(".volkanic/runtime/java"),
+            args: vec![
+                "-Xms512M".to_string(),
+                "-Xmx1024M".to_string(),
+                "-jar".to_string(),
+                "server.jar".to_string(),
+            ],
         };
 
         let script = to_script(
@@ -65,6 +64,6 @@ mod tests {
         )
         .await;
 
-        assert_eq!(script, "#!/usr/bin/env bash\n\nexport JDK_PATH=$(realpath .volkanic/runtime/java)\ncd .volkanic/build && exec $JDK_PATH -Xms512M -Xmx1024M -jar server.jar -nogui");
+        assert_eq!(script, "#!/usr/bin/env bash\n\nexport JDK_PATH=$(realpath .volkanic/runtime/java)\ncd .volkanic/build && exec $JDK_PATH -Xms512M -Xmx1024M -jar server.jar");
     }
 }

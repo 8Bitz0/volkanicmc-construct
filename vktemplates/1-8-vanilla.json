@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/8Bitz0/volkanicmc-construct/main/schemas/format-1_draft1.json",
-  "template-format": 1,
+  "template-format": 2,
   "name": "1.8.9 Vanilla",
   "description": "Server running Minecraft 1.8.9",
   "author": "VolkanicMC",
@@ -32,19 +31,19 @@
   "runtime": {
     "jdk": {
       "version": "8",
-      "additional-args": {
-        "preset": "aikars"
-      }
-    }
-  },
-  "server": {
-    "java": {
-      "url": "https://launcher.mojang.com/mc/game/1.8.9/server/b58b2ceb36e01bcd8dbf49c8fb66c55a9f0676cd/server.jar",
-      "sha512": "554803d45842ff8f549835fc4a638fb1349f85c61d1cc441af956ac04eb3f2de480116b13e9cd7a763bc8bace05c23f476319b034159d52845427d38406e387e",
-      "args": "nogui"
+      "jar-path": "server.jar",
+      "jdk-args": [],
+      "server-args": ["nogui"]
     }
   },
   "resources": [
+    {
+      "remote": {
+        "url": "https://launcher.mojang.com/mc/game/1.8.9/server/b58b2ceb36e01bcd8dbf49c8fb66c55a9f0676cd/server.jar",
+        "sha512": "554803d45842ff8f549835fc4a638fb1349f85c61d1cc441af956ac04eb3f2de480116b13e9cd7a763bc8bace05c23f476319b034159d52845427d38406e387e",
+        "template-path": "server.jar"
+      }
+    },
     {
       "include": {
         "id": "1-8-vanilla.properties",

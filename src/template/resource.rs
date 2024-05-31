@@ -4,27 +4,22 @@ use std::path;
 
 use crate::resources;
 
-use super::{jdk_args::JdkArguments, var::VarFormat};
+use super::var::VarFormat;
 
 #[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
 pub enum ServerRuntimeResource {
     #[serde(rename = "jdk")]
     Jdk {
         version: String,
+        /// Path to JAR executable
+        #[serde(rename = "jar-path")]
+        jar_path: path::PathBuf,
         /// Adds additional JDK arguments
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(rename = "additional-args")]
-        additional_args: Option<JdkArguments>,
-    },
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
-pub enum ServerExecResource {
-    #[serde(rename = "java")]
-    Java {
-        url: String,
-        sha512: String,
-        args: String,
+        #[serde(rename = "jdk-args")]
+        jdk_args: Vec<String>,
+        /// Adds additional arguments for JAR executable
+        #[serde(rename = "server-args")]
+        server_args: Vec<String>,
     },
 }
 
