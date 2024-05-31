@@ -40,9 +40,9 @@ export PATH="${PATH}:~/.local/bin"
 if [[ -f ".volkanic/build.json" ]]; then
     echo "Build already present"
 elif [[ $ALWAYS_REBUILD == "1" ]]; then
-    vkconstruct -b /server build --force --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
+    vkconstruct -b /server build --force -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
 else
-    vkconstruct -b /server build --allow-custom-jvm-args -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
+    vkconstruct -b /server build -j="-Xms"$MIN_MEM"M -Xmx"$MAX_MEM"M" template.json
 fi
 
 # Create VolkanicMC start script
