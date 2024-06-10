@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod conf;
 mod jdk;
+pub mod style;
 
 pub use jdk::{Jdk, JdkConfig};
 
