@@ -85,5 +85,19 @@
         "template-path": "eula.txt"
       }
     }
+  ],
+  "savables": [
+    "logs/",
+    "world/",
+    "world_nether/",
+    "world_the_end/",
+    ".console_history",
+    "banned-ips.json",
+    "banned-players.json",
+    "ops.json",
+    "permissions.yml",
+    "usercache.json",
+    "version_history.json",
+    "whitelist.json"
   ]
 }
