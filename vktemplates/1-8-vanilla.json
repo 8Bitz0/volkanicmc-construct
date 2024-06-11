@@ -58,7 +58,7 @@
       }
     }
   ],
-  "savables": [
+  "saveables": [
     "logs",
     "world/",
     "banned-ips.json",

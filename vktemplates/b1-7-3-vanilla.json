@@ -46,7 +46,7 @@
       }
     }
   ],
-  "savables": [
+  "saveables": [
     "world/",
     "banned-ips.txt",
     "banned-players.txt",

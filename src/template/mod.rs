@@ -59,7 +59,7 @@ pub struct Template {
     /// List of additional resources (e.g. plugins, mods, configs, etc.)
     pub resources: Vec<resource::GenericResource>,
     /// List of files which should be saved (e.g. worlds, whitelists, etc.)
-    pub savables: Vec<PathBuf>,
+    pub saveables: Vec<PathBuf>,
 }
 
 impl Template {
@@ -105,7 +105,7 @@ impl Default for Template {
                     template_path: "server.properties".into(),
                 },
             ],
-            savables: vec![
+            saveables: vec![
                 PathBuf::from("logs/"),
                 PathBuf::from("world/"),
                 PathBuf::from("world_nether/"),
