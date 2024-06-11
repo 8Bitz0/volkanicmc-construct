@@ -330,7 +330,7 @@ async fn main() {
 
             let mut export = saveable::ExportInfo::new(store).await;
 
-            for o in build_info.template.savables {
+            for o in build_info.template.saveables {
                 match export.add(o).await {
                     Ok(()) => {}
                     Err(e) => {

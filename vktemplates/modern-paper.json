@@ -86,7 +86,7 @@
       }
     }
   ],
-  "savables": [
+  "saveables": [
     "logs/",
     "world/",
     "world_nether/",
