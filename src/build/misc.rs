@@ -1,6 +1,6 @@
 use flate2::read::GzDecoder;
 use futures_util::stream::StreamExt;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::ProgressBar;
 use reqwest::Client;
 use sha2::{Digest, Sha256, Sha512};
 use std::path;
@@ -8,10 +8,10 @@ use tokio::{
     fs,
     io::{self, AsyncReadExt, AsyncWriteExt},
 };
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use crate::{
-    resources::{self, ArchiveFormat},
+    resources::{self, style, ArchiveFormat},
     vkstore,
 };
 
@@ -91,12 +91,7 @@ pub async fn download_progress(
 
     let content_length = response.content_length().unwrap_or(0);
     let pb = ProgressBar::new(content_length);
-    pb.set_style(
-        ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} ({eta})")
-            .unwrap()
-            .progress_chars("#/-"),
-    );
+    pb.set_style(style::get_pb_style(style::ProgressStyleType::Bytes).await);
 
     let mut dest = match fs::File::create(&p).await {
         Ok(f) => f,
@@ -259,67 +254,4 @@ pub async fn extract(
     }
 
     Ok(new_path)
-}
-
-#[derive(Debug, PartialEq)]
-pub enum FsObjectType {
-    None,
-    File,
-    Directory,
-}
-
-impl std::fmt::Display for FsObjectType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-pub async fn fs_obj(path: path::PathBuf) -> FsObjectType {
-    if path.is_file() {
-        FsObjectType::File
-    } else if path.is_dir() {
-        FsObjectType::Directory
-    } else {
-        FsObjectType::None
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum CreateAncestorError {
-    #[error("Filesystem error: {0}")]
-    FilesystemError(io::Error),
-    #[error("Found wrong filesystem object at: \"{0}\" (expected: {1}, found: {2})")]
-    WrongFsObject(path::PathBuf, FsObjectType, FsObjectType),
-    #[error("No parent directory for path: {0}")]
-    NoParentDir(path::PathBuf),
-}
-
-pub async fn create_ancestors(path: path::PathBuf) -> Result<(), CreateAncestorError> {
-    debug!("Creating ancestors for \"{}\"", path.to_string_lossy());
-    if let Some(parent) = path.clone().parent() {
-        debug!("Direct parent path: \"{}\"", parent.to_string_lossy());
-        match fs_obj(path.clone()).await {
-            FsObjectType::Directory => {
-                debug!("Ancestors already exist for \"{}\"", path.to_string_lossy());
-                Ok(())
-            }
-            FsObjectType::None => {
-                fs::create_dir_all(parent)
-                    .await
-                    .map_err(CreateAncestorError::FilesystemError)?;
-
-                Ok(())
-            }
-            _ => {
-                error!("Wrong filesystem object at: \"{}\"", path.to_string_lossy());
-                Err(CreateAncestorError::WrongFsObject(
-                    path.clone(),
-                    FsObjectType::Directory,
-                    fs_obj(path).await,
-                ))
-            }
-        }
-    } else {
-        Err(CreateAncestorError::NoParentDir(path))
-    }
 }

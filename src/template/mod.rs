@@ -1,6 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::path;
+use std::path::PathBuf;
 
 pub mod manage;
 pub mod resource;
@@ -58,10 +58,13 @@ pub struct Template {
     pub runtime: resource::ServerRuntimeResource,
     /// List of additional resources (e.g. plugins, mods, configs, etc.)
     pub resources: Vec<resource::GenericResource>,
+    /// List of files which should be saved (e.g. worlds, whitelists, etc.)
+    pub savables: Vec<PathBuf>,
 }
 
 impl Template {
-    pub async fn import(file: path::PathBuf) -> Result<Self, ParseError> {
+    // TODO: Should use a generic `Path` type
+    pub async fn import(file: PathBuf) -> Result<Self, ParseError> {
         parse::file_to_template(file).await
     }
 }
@@ -82,7 +85,7 @@ impl Default for Template {
             ],
             runtime: resource::ServerRuntimeResource::Jdk {
                 version: "17".to_string(),
-                jar_path: path::PathBuf::from("server.jar"),
+                jar_path: PathBuf::from("server.jar"),
                 jdk_args: AIKARS_FLAGS.iter().map(|s| s.to_string()).collect(),
                 server_args: vec!["-nogui".to_string()]
             },
@@ -94,7 +97,7 @@ impl Default for Template {
                     sha512: Some("6179a94b15cbfd141431e509806ab5ce04655effea9866a5a33673b82e7fffe6fb438147565b73c98140e5cf1a5b7d9b083978c46d5239fd08b26863c423a820".to_string()),
                     use_variables: None,
                     archive: None,
-                    template_path: path::PathBuf::from("server.jar"),
+                    template_path: PathBuf::from("server.jar"),
                 },
                 resource::GenericResource::Base64 {
                     base64: "IyBNaW5lY3JhZnQgc2VydmVyIHByb3BlcnRpZXMNCmVuYWJsZS1qbXgtbW9uaXRvcmluZz1mYWxzZQ0KcmNvbi5wb3J0PTI1NTc1DQpsZXZlbC1zZWVkPQ0KZ2FtZW1vZGU9c3Vydml2YWwNCmVuYWJsZS1jb21tYW5kLWJsb2NrPWZhbHNlDQplbmFibGUtcXVlcnk9ZmFsc2UNCmdlbmVyYXRvci1zZXR0aW5ncz17fQ0KZW5mb3JjZS1zZWN1cmUtcHJvZmlsZT1mYWxzZQ0KbGV2ZWwtbmFtZT13b3JsZA0KbW90ZD1BIE1pbmVjcmFmdCBTZXJ2ZXIsIG9uIFZvbGthbmljTUMNCnF1ZXJ5LnBvcnQ9MjU1NjUNCnB2cD10cnVlDQpnZW5lcmF0ZS1zdHJ1Y3R1cmVzPXRydWUNCm1heC1jaGFpbmVkLW5laWdoYm9yLXVwZGF0ZXM9MTAwMDAwMA0KZGlmZmljdWx0eT1ub3JtYWwNCm5ldHdvcmstY29tcHJlc3Npb24tdGhyZXNob2xkPTI1Ng0KbWF4LXRpY2stdGltZT02MDAwMA0KcmVxdWlyZS1yZXNvdXJjZS1wYWNrPWZhbHNlDQp1c2UtbmF0aXZlLXRyYW5zcG9ydD10cnVlDQptYXgtcGxheWVycz04DQpvbmxpbmUtbW9kZT10cnVlDQplbmFibGUtc3RhdHVzPXRydWUNCmFsbG93LWZsaWdodD1mYWxzZQ0KaW5pdGlhbC1kaXNhYmxlZC1wYWNrcz0NCmJyb2FkY2FzdC1yY29uLXRvLW9wcz10cnVlDQp2aWV3LWRpc3RhbmNlPTgNCnNlcnZlci1pcD0NCnJlc291cmNlLXBhY2stcHJvbXB0PQ0KYWxsb3ctbmV0aGVyPXRydWUNCnNlcnZlci1wb3J0PSR7UE9SVH0NCmVuYWJsZS1yY29uPWZhbHNlDQpzeW5jLWNodW5rLXdyaXRlcz10cnVlDQpvcC1wZXJtaXNzaW9uLWxldmVsPTQNCnByZXZlbnQtcHJveHktY29ubmVjdGlvbnM9ZmFsc2UNCmhpZGUtb25saW5lLXBsYXllcnM9ZmFsc2UNCnJlc291cmNlLXBhY2s9DQplbnRpdHktYnJvYWRjYXN0LXJhbmdlLXBlcmNlbnRhZ2U9MTAwDQpzaW11bGF0aW9uLWRpc3RhbmNlPTEwDQpyY29uLnBhc3N3b3JkPQ0KcGxheWVyLWlkbGUtdGltZW91dD0wDQpmb3JjZS1nYW1lbW9kZT1mYWxzZQ0KcmF0ZS1saW1pdD0wDQpoYXJkY29yZT1mYWxzZQ0Kd2hpdGUtbGlzdD1mYWxzZQ0KYnJvYWRjYXN0LWNvbnNvbGUtdG8tb3BzPXRydWUNCnNwYXduLW5wY3M9dHJ1ZQ0Kc3Bhd24tYW5pbWFscz10cnVlDQpsb2ctaXBzPXRydWUNCmZ1bmN0aW9uLXBlcm1pc3Npb24tbGV2ZWw9Mg0KaW5pdGlhbC1lbmFibGVkLXBhY2tzPXZhbmlsbGENCmxldmVsLXR5cGU9bWluZWNyYWZ0XDpub3JtYWwNCnRleHQtZmlsdGVyaW5nLWNvbmZpZz0NCnNwYXduLW1vbnN0ZXJzPXRydWUNCmVuZm9yY2Utd2hpdGVsaXN0PWZhbHNlDQpzcGF3bi1wcm90ZWN0aW9uPTE2DQpyZXNvdXJjZS1wYWNrLXNoYTE9DQptYXgtd29ybGQtc2l6ZT0yOTk5OTk4NA==".into(),
@@ -102,6 +105,20 @@ impl Default for Template {
                     template_path: "server.properties".into(),
                 },
             ],
+            savables: vec![
+                PathBuf::from("logs/"),
+                PathBuf::from("world/"),
+                PathBuf::from("world_nether/"),
+                PathBuf::from("world_the_end/"),
+                PathBuf::from(".console_history"),
+                PathBuf::from("banned-ips.json"),
+                PathBuf::from("banned-players.json"),
+                PathBuf::from("ops.json"),
+                PathBuf::from("permissions.yml"),
+                PathBuf::from("usercache.json"),
+                PathBuf::from("version_history.json"),
+                PathBuf::from("whitelist.json"),
+            ]
         }
     }
 }

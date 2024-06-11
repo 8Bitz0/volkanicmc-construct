@@ -5,6 +5,7 @@ use std::path;
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info};
 
+use crate::fsobj;
 use crate::resources::{Jdk, JdkConfig};
 use crate::template::{self, vkinclude};
 use crate::vkstore;
@@ -26,7 +27,7 @@ pub enum JobError {
     #[error("No file name found in path: {0}")]
     NoFileNameInPath(path::PathBuf),
     #[error("Creating path ancestor directories failed: {0}")]
-    CreateFilesystemAncestors(misc::CreateAncestorError),
+    CreateFilesystemAncestors(fsobj::CreateAncestorError),
     #[error("Directory copy failed: {0}")]
     DirectoryCopyFailed(path::PathBuf),
     #[error("Base64 error: {0}")]
@@ -100,7 +101,7 @@ impl JobAction {
             } => {
                 let abs_path = store.build_path.join(template_path);
 
-                misc::create_ancestors(abs_path.clone())
+                fsobj::create_ancestors(abs_path.clone())
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 
@@ -127,7 +128,7 @@ impl JobAction {
             } => {
                 let abs_path = store.build_path.join(template_path);
 
-                misc::create_ancestors(abs_path.clone())
+                fsobj::create_ancestors(abs_path.clone())
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 
@@ -165,8 +166,8 @@ impl JobAction {
                                 .map_err(JobError::ExtractionError)?;
                         let a_path_inner = archive_path.join(t.inner_path.clone());
 
-                        match misc::fs_obj(a_path_inner.clone()).await {
-                            misc::FsObjectType::Directory => {
+                        match fsobj::fs_obj(a_path_inner.clone()).await {
+                            fsobj::FsObjectType::Directory => {
                                 match copy_dir::copy_dir(&a_path_inner, &abs_path) {
                                     Ok(_) => {
                                         info!(
@@ -184,8 +185,8 @@ impl JobAction {
                                 for p in &t.post_remove {
                                     let abs_rm_path = abs_path.join(p);
 
-                                    match misc::fs_obj(abs_rm_path.clone()).await {
-                                        misc::FsObjectType::Directory => {
+                                    match fsobj::fs_obj(abs_rm_path.clone()).await {
+                                        fsobj::FsObjectType::Directory => {
                                             info!(
                                                 "Remove post-removal directory: \"{}\"",
                                                 p.to_string_lossy()
@@ -194,10 +195,10 @@ impl JobAction {
                                                 .await
                                                 .map_err(JobError::Filesystem)?;
                                         }
-                                        misc::FsObjectType::File => fs::remove_file(abs_rm_path)
+                                        fsobj::FsObjectType::File => fs::remove_file(abs_rm_path)
                                             .await
                                             .map_err(JobError::Filesystem)?,
-                                        misc::FsObjectType::None => {
+                                        fsobj::FsObjectType::None => {
                                             error!(
                                                 "Post-removal inner-archive path not found: {}",
                                                 p.to_string_lossy()
@@ -206,12 +207,12 @@ impl JobAction {
                                     }
                                 }
                             }
-                            misc::FsObjectType::File => {
+                            fsobj::FsObjectType::File => {
                                 fs::copy(&a_path_inner, &abs_path)
                                     .await
                                     .map_err(JobError::Filesystem)?;
                             }
-                            misc::FsObjectType::None => {
+                            fsobj::FsObjectType::None => {
                                 return Err(JobError::InnerArchivePathNotFound(a_path_inner))
                             }
                         }
@@ -224,7 +225,7 @@ impl JobAction {
             JobAction::CopyFromInclude { id, template_path } => {
                 let abs_path = store.build_path.join(template_path);
 
-                misc::create_ancestors(abs_path.clone())
+                fsobj::create_ancestors(abs_path.clone())
                     .await
                     .map_err(JobError::CreateFilesystemAncestors)?;
 

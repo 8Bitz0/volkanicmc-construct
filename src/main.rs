@@ -2,12 +2,14 @@
 
 use clap::{Parser, Subcommand};
 use std::path;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 mod build;
 mod exec;
+mod fsobj;
 mod hostinfo;
 mod resources;
+mod saveable;
 mod template;
 mod vkstore;
 
@@ -33,6 +35,9 @@ enum Command {
         /// Add additional JVM arguments to place before the template's JVM arguments
         #[arg(short = 'j', long, value_parser, num_args = 1.., value_delimiter = ' ')]
         additional_jvm_args: Vec<String>,
+        /// Include a importable archive in the build
+        #[arg(short = 'i', long)]
+        import_save: Option<path::PathBuf>,
         /// Disable verification for all files
         #[arg(long)]
         no_verify: bool,
@@ -46,6 +51,10 @@ enum Command {
     /// Create a Bash script from the execution information of an existing build
     ExecScript {
         format: exec::script::ExecScriptType,
+    },
+    Export {
+        /// Path to write export archive
+        path: path::PathBuf,
     },
     /// Clear downloads and temporary files
     Clean,
@@ -92,6 +101,7 @@ async fn main() {
             force,
             user_vars,
             additional_jvm_args,
+            import_save,
             no_verify,
         } => {
             init_log().await;
@@ -115,7 +125,7 @@ async fn main() {
 
             match build::build(
                 template,
-                store,
+                store.clone(),
                 force,
                 user_vars,
                 additional_jvm_args,
@@ -129,6 +139,22 @@ async fn main() {
                     std::process::exit(1);
                 }
             };
+
+            if let Some(archive_path) = import_save {
+                info!(
+                    "Import from \"{}\" requested",
+                    archive_path.to_string_lossy()
+                );
+                match saveable::import(store.build_path, archive_path).await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        error!("Failed to import archive: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                debug!("No import requested.");
+            }
         }
         Command::Check { path } => {
             init_log().await;
@@ -282,6 +308,40 @@ async fn main() {
                 error!("No store found");
                 std::process::exit(1);
             }
+        }
+        Command::Export { path } => {
+            init_log().await;
+
+            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
+                Ok(store) => store,
+                Err(e) => {
+                    error!("Failed to initialize store: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            let build_info = match build::BuildInfo::get(&store).await {
+                Ok(build_info) => build_info,
+                Err(e) => {
+                    error!("Failed to initialize build info: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            let mut export = saveable::ExportInfo::new(store).await;
+
+            for o in build_info.template.savables {
+                match export.add(o).await {
+                    Ok(()) => {}
+                    Err(e) => {
+                        error!("Failed to export build: {}", e);
+
+                        std::process::exit(1);
+                    }
+                };
+            }
+
+            export.export(path).await.unwrap();
         }
     }
 }

@@ -45,5 +45,13 @@
         "template-path": "eula.txt"
       }
     }
+  ],
+  "savables": [
+    "world/",
+    "banned-ips.txt",
+    "banned-players.txt",
+    "ops.txt",
+    "server.log",
+    "white-list.txt"
   ]
 }
