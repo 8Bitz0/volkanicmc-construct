@@ -43,8 +43,8 @@ pub async fn prepare_jdk(
         } else {
             Verification::Sha256(jdk.sha256)
         },
-        jdk_name.clone(),
-        None,
+        &jdk_name,
+        None::<String>,
     )
     .await
     .map_err(PrepareJdkError::Download)?;
