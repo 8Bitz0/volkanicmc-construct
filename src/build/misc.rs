@@ -36,8 +36,10 @@ pub enum Verification {
     Sha512(String),
 }
 
-pub async fn get_remote_filename(url: &str) -> Option<String> {
-    let split_url = url.split('/').collect::<Vec<&str>>();
+pub async fn get_remote_filename<T: std::fmt::Display>(url: T) -> Option<String> {
+    let str = url.to_string();
+
+    let split_url = str.split('/').collect::<Vec<&str>>();
 
     if split_url.len() < 2 {
         None
@@ -50,12 +52,12 @@ pub async fn default_user_agent() -> String {
     format!("8Bitz0/volkanicmc/{}", env!("CARGO_PKG_VERSION"))
 }
 
-pub async fn download_progress(
+pub async fn download_progress<U: std::fmt::Display, N: std::fmt::Display, A: std::fmt::Display>(
     store: vkstore::VolkanicStore,
-    url: &str,
+    url: U,
     verification: Verification,
-    name: impl std::fmt::Display,
-    user_agent: Option<String>,
+    name: N,
+    user_agent: Option<A>,
 ) -> Result<path::PathBuf, DownloadError> {
     let p = store.downloads_path.join(match &verification {
         Verification::None => format!("noverify-{}", &name),
@@ -79,12 +81,14 @@ pub async fn download_progress(
 
     let client = Client::new();
 
+    let user_agent = match user_agent {
+        Some(u) => u.to_string(),
+        None => default_user_agent().await,
+    };
+
     let response = client
-        .get(url)
-        .header(
-            reqwest::header::USER_AGENT,
-            user_agent.unwrap_or(default_user_agent().await),
-        )
+        .get(url.to_string())
+        .header(reqwest::header::USER_AGENT, user_agent)
         .send()
         .await
         .map_err(DownloadError::Http)?;
