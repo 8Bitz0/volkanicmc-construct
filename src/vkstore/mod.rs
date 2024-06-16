@@ -1,6 +1,6 @@
 use std::path;
 use tokio::{fs, task::spawn_blocking};
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 
 const VKSTORE_PATH: &str = ".volkanic/";
 
@@ -76,32 +76,49 @@ impl VolkanicStore {
 
         Ok(())
     }
-    pub async fn exists() -> bool {
-        path::Path::new(VKSTORE_PATH).is_dir()
-    }
-    /// Creates a new `VolkanicStore` and creates all necessary subdirectories
-    pub async fn init<T: AsRef<path::Path>>(override_build: Option<T>) -> Result<Self, StoreError> {
-        let store = Self {
+    /// Creates a new `VolkanicStore`
+    pub async fn new() -> Self {
+        Self {
             path: path::PathBuf::from(VKSTORE_PATH),
-            build_path: match override_build {
-                Some(p) => {
-                    info!(
-                        "Overriding build directory, using: \"{}\"",
-                        p.as_ref().to_string_lossy()
-                    );
-
-                    p.as_ref().to_path_buf()
-                }
-                None => path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
-            },
+            build_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_BUILD_SUFFIX),
             downloads_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_DOWNLOADS_SUFFIX),
             runtime_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_RUNTIME_SUFFIX),
             temp_path: path::PathBuf::from(VKSTORE_PATH).join(VKSTORE_TEMP_SUFFIX),
-        };
+        }
+    }
+    /// Creates a new `VolkanicStore` with a custom root directory
+    pub async fn new_custom_root<P: AsRef<path::Path>>(root_path: P) -> Self {
+        let root = root_path.as_ref().to_path_buf();
 
-        store.create().await?;
+        Self {
+            path: root.to_path_buf().clone(),
+            build_path: root.to_path_buf().clone().join(VKSTORE_BUILD_SUFFIX),
+            downloads_path: root.to_path_buf().clone().join(VKSTORE_DOWNLOADS_SUFFIX),
+            runtime_path: root.to_path_buf().clone().join(VKSTORE_RUNTIME_SUFFIX),
+            temp_path: root.to_path_buf().clone().join(VKSTORE_TEMP_SUFFIX),
+        }
+    }
+    /// Changes the build directory for the store
+    pub async fn override_build<P: AsRef<path::Path>>(&self, path: P) -> Self {
+        let mut store = self.clone();
 
-        Ok(store)
+        store.build_path = path.as_ref().to_path_buf();
+
+        store
+    }
+    /// Changes the downloads directory for the store
+    pub async fn override_downloads<P: AsRef<path::Path>>(&self, path: P) -> Self {
+        let mut store = self.clone();
+
+        store.downloads_path = path.as_ref().to_path_buf();
+
+        store
+    }
+    /// Create directories for store
+    pub async fn init(&self) -> Result<(), StoreError> {
+        self.create().await?;
+
+        Ok(())
     }
     /// Removes temporary files which shouldn't persist across runs
     pub async fn clean(&self) -> Result<(), StoreError> {

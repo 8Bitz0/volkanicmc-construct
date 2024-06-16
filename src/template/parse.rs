@@ -15,7 +15,7 @@ pub enum ParseError {
     Filesystem(tokio::io::Error),
 }
 
-pub async fn file_to_template(path: path::PathBuf) -> Result<Template, ParseError> {
+pub async fn file_to_template<P: AsRef<path::Path>>(path: P) -> Result<Template, ParseError> {
     let json = fs::read_to_string(&path)
         .await
         .map_err(ParseError::Filesystem)?;
