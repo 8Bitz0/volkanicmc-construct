@@ -1,6 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub mod manage;
 pub mod resource;
@@ -64,8 +64,8 @@ pub struct Template {
 
 impl Template {
     // TODO: Should use a generic `Path` type
-    pub async fn import(file: PathBuf) -> Result<Self, ParseError> {
-        parse::file_to_template(file).await
+    pub async fn import<P: AsRef<Path>>(file: P) -> Result<Self, ParseError> {
+        parse::file_to_template(file.as_ref()).await
     }
 }
 

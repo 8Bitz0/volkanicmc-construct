@@ -18,9 +18,15 @@ mod vkstore;
 struct Args {
     #[command(subcommand)]
     command: Command,
+    /// Override store directory
+    #[arg(short = 's', long)]
+    override_store_dir: Option<path::PathBuf>,
     /// Override build directory
     #[arg(short = 'b', long)]
     override_build_dir: Option<path::PathBuf>,
+    /// Override downloads directory
+    #[arg(short = 'd', long)]
+    override_downloads_dir: Option<path::PathBuf>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -95,6 +101,10 @@ async fn init_log() {
 async fn main() {
     let args = Args::parse();
 
+    let store_d = args.override_store_dir;
+    let build_d = args.override_build_dir;
+    let downloads_d = args.override_downloads_dir;
+
     match args.command {
         Command::Build {
             path,
@@ -106,22 +116,9 @@ async fn main() {
         } => {
             init_log().await;
 
-            let template = match template::Template::import(path).await {
-                Ok(template) => template,
-                Err(e) => {
-                    error!("Failed to parse template: {}", e);
-                    std::process::exit(1);
-                }
-            };
-            info!("Template \"{}\" parsed correctly", template.name);
+            let template = parse_template(path).await;
 
-            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
-                Ok(store) => store,
-                Err(e) => {
-                    error!("Failed to initialize store: {}", e);
-                    std::process::exit(1);
-                }
-            };
+            let store = vkstore_init(store_d, build_d, downloads_d).await;
 
             match build::build(
                 template,
@@ -159,25 +156,12 @@ async fn main() {
         Command::Check { path } => {
             init_log().await;
 
-            let template = match template::Template::import(path).await {
-                Ok(template) => template,
-                Err(e) => {
-                    error!("Failed to parse template: {}", e);
-                    std::process::exit(1);
-                }
-            };
-            info!("Template \"{}\" parsed correctly", template.name);
+            parse_template(path).await;
         }
         Command::Run => {
             init_log().await;
 
-            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
-                Ok(store) => store,
-                Err(e) => {
-                    error!("Failed to initialize store: {}", e);
-                    std::process::exit(1);
-                }
-            };
+            let store = vkstore_init(store_d, build_d, downloads_d).await;
 
             match exec::run(&store).await {
                 Ok(()) => {}
@@ -243,15 +227,7 @@ async fn main() {
             }
         },
         Command::ExecScript { format } => {
-            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
-                Ok(store) => store,
-                Err(e) => {
-                    init_log().await;
-
-                    error!("Failed to initialize store: {}", e);
-                    std::process::exit(1);
-                }
-            };
+            let store = vkstore_init(store_d, build_d, downloads_d).await;
 
             if !build::BuildInfo::exists(&store).await {
                 init_log().await;
@@ -288,37 +264,20 @@ async fn main() {
         Command::Clean => {
             init_log().await;
 
-            if vkstore::VolkanicStore::exists().await {
-                let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
-                    Ok(store) => store,
-                    Err(e) => {
-                        error!("Failed to initialize store: {}", e);
-                        std::process::exit(1);
-                    }
-                };
+            let store = vkstore_init(store_d, build_d, downloads_d).await;
 
-                match vkstore::VolkanicStore::clear_downloads(&store).await {
-                    Ok(()) => {}
-                    Err(e) => {
-                        error!("Failed to clean store: {}", e);
-                        std::process::exit(1);
-                    }
+            match vkstore::VolkanicStore::clear_downloads(&store).await {
+                Ok(()) => {}
+                Err(e) => {
+                    error!("Failed to clean store: {}", e);
+                    std::process::exit(1);
                 }
-            } else {
-                error!("No store found");
-                std::process::exit(1);
             }
         }
         Command::Export { path } => {
             init_log().await;
 
-            let store = match vkstore::VolkanicStore::init(args.override_build_dir).await {
-                Ok(store) => store,
-                Err(e) => {
-                    error!("Failed to initialize store: {}", e);
-                    std::process::exit(1);
-                }
-            };
+            let store = vkstore_init(store_d, build_d, downloads_d).await;
 
             let build_info = match build::BuildInfo::get(&store).await {
                 Ok(build_info) => build_info,
@@ -342,6 +301,48 @@ async fn main() {
             }
 
             export.export(path).await.unwrap();
+        }
+    }
+}
+
+async fn vkstore_init<S: AsRef<path::Path>>(
+    store_dir: Option<S>,
+    build_dir: Option<path::PathBuf>,
+    downloads_dir: Option<path::PathBuf>,
+) -> vkstore::VolkanicStore {
+    let mut store = match store_dir {
+        Some(s) => vkstore::VolkanicStore::new_custom_root(s).await,
+        None => vkstore::VolkanicStore::new().await,
+    };
+
+    if let Some(b) = build_dir {
+        store = store.override_build(b).await;
+    }
+
+    if let Some(d) = downloads_dir {
+        store = store.override_downloads(d).await;
+    }
+
+    match store.init().await {
+        Ok(store) => store,
+        Err(e) => {
+            error!("Failed to initialize store: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    store
+}
+
+async fn parse_template<P: AsRef<path::Path>>(path: P) -> template::Template {
+    match template::Template::import(path.as_ref()).await {
+        Ok(template) => {
+            info!("Template \"{}\" parsed correctly", template.name);
+            template
+        }
+        Err(e) => {
+            error!("Failed to parse template: {}", e);
+            std::process::exit(1);
         }
     }
 }
