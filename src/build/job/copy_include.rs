@@ -1,5 +1,6 @@
 use std::path::Path;
 use tokio::fs;
+use tracing::debug;
 
 use crate::fsobj;
 use crate::template::vkinclude;
@@ -25,7 +26,25 @@ pub async fn copy_include<T: std::fmt::Display, P: AsRef<Path>>(
         None => return Err(JobError::NotAvailableInIncludeFolder(id.to_string())),
     };
 
-    fs::copy(p, abs_path).await.map_err(JobError::Filesystem)?;
+    match fsobj::fs_obj(&p).await {
+        fsobj::FsObjectType::Directory => {
+            match copy_dir::copy_dir(&p, &abs_path) {
+                Ok(_) => {}
+                Err(e) => {
+                    debug!("Errors ocurred during JDK copy: {:#?}", e);
+                    return Err(JobError::DirectoryCopyFailed(p));
+                }
+            };
+        }
+        fsobj::FsObjectType::File => {
+            fs::copy(&p, &abs_path)
+                .await
+                .map_err(JobError::Filesystem)?;
+        }
+        fsobj::FsObjectType::None => {
+            return Err(JobError::NotAvailableInIncludeFolder(id.to_string()));
+        }
+    }
 
     Ok(())
 }
