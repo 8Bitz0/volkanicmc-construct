@@ -26,7 +26,6 @@ pub struct BuildInfo {
     #[serde(skip)]
     path: Option<path::PathBuf>,
     #[serde(skip, default)]
-    pub stray: bool,
     pub template: template::Template,
     #[serde(skip)]
     pub jobs: Vec<job::Job>,
