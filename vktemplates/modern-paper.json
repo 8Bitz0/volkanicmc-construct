@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/8Bitz0/volkanicmc-construct/refs/heads/main/schemas/format-2_draft1.json",
   "template-format": 2,
   "name": "1.20.4 Paper",
   "description": "Server running Minecraft 1.20.4 with PaperMC",
