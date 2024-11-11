@@ -3,7 +3,6 @@ name = "volkanicmc-construct"
 version = "0.2.0"
 authors = ["Alexander Hansen <alex@bitzmc.com>"]
 edition = "2021"
-rust-version = "1.70"
 description = "Setup Minecraft servers by description"
 repository = "https://github.com/8Bitz0/volkanicmc-construct"
 license = "MIT"
@@ -12,27 +11,27 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 base64 = "0.22.0"
-clap = { version = "=4.4.8", features = ["derive"] }
+clap = { version = "=4.5.20", features = ["derive"] }
 copy_dir = "0.1.3"
-flate2 = "1.0.28"
-futures-util = "0.3.29"
+flate2 = "1.0.34"
+futures-util = "0.3.31"
 hex = "0.4.3"
 indicatif = "0.17.7"
-reqwest = { version = "0.12.3", features = ["stream", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12.9", features = ["stream", "rustls-tls"], default-features = false }
 schemars = { version = "0.8.21" }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.215", features = ["derive"] }
 serde_jsonc = "1.0.108"
 serde_yaml = "0.9.27"
 sha2 = "0.10.8"
-sysinfo = "0.30.11"
-tar = "0.4.40"
-thiserror = "1.0.50"
-tokio = { version = "1.34.0", features = ["fs", "macros", "rt-multi-thread", "tokio-macros", "tracing"] }
+sysinfo = "0.32.0"
+tar = "0.4.43"
+thiserror = "2.0.3"
+tokio = { version = "1.41.1", features = ["fs", "macros", "rt-multi-thread", "tokio-macros", "tracing"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["fmt"] }
-uuid = { version = "1.8.0", features = ["fast-rng", "v4"] }
+uuid = { version = "1.11.0", features = ["fast-rng", "v4"] }
 walkdir = "2.5.0"
-zip = "1.1.4"
+zip = "2.2.0"
 
 [features]
 debug_log = []
