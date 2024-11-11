@@ -117,7 +117,7 @@ jobs:
         with:
           prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             target/${{ env.TAR_NAME }}.tar.xz
             target/${{ env.DEB_NAME }}.deb
@@ -184,7 +184,7 @@ jobs:
         with:
           prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             target/${{ env.TAR_NAME }}.tar.xz  
 
@@ -245,7 +245,7 @@ jobs:
         with:
           prerelease: ${{ env.PRERELEASE }}
           tag_name: ${{ env.TAG_NAME }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             target/${{ env.EXE_NAME }}.exe
             target/${{ env.MSI_NAME }}.msi
