@@ -1,9 +1,11 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "ghcr.io/devcontainers/features/rust:1": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "installDockerBuildx": true
+  "image": "mcr.microsoft.com/devcontainers/rust:1.0-bookworm",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fill-labs.dependi",
+        "rust-lang.rust-analyzer"
+      ]
     }
   }
 }
