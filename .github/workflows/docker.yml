@@ -1,7 +1,6 @@
 name: Deploy Images to GHCR
 
-permissions:
-  packages: write
+permissions: write-all
 
 on:
   workflow_call:

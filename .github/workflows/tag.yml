@@ -1,8 +1,6 @@
 name: Build on tag
 
-permissions:
-  deployments: write
-  packages: write
+permissions: write-all
 
 on:
   workflow_dispatch:
