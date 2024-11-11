@@ -1,7 +1,6 @@
 name: Release
 
-permissions:
-  deployments: write
+permissions: write-all
 
 on:
   workflow_dispatch:
