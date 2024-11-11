@@ -17,8 +17,8 @@ vkconstruct help
 ```
 
 ## Compatibility
-- Windows: Windows 7 SP1 (32-bit or 64-bit) or later
-- macOS: 10.9 or later (10.9 - 10.12 requires the "maclegacy" binary)
+- Windows: Windows 10 (32-bit or 64-bit) or later
+- macOS: 10.15 or later
 - Linux: Varies based on distribution
 
 NOTE: These only apply to the provided binaries.
