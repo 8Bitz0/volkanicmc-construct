@@ -1,5 +1,8 @@
 name: Release
 
+permissions:
+  deployments: write
+
 on:
   workflow_dispatch:
   workflow_call:
