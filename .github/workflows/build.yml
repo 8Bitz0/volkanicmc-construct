@@ -134,7 +134,6 @@ jobs:
               os: mac,
               host: aarch64-apple-darwin,
               target: aarch64-apple-darwin,
-              version: stable,
               on: macos-14,
             }
           - {
@@ -142,16 +141,7 @@ jobs:
               os: mac,
               host: aarch64-apple-darwin,
               target: x86_64-apple-darwin,
-              version: stable,
               on: macos-14,
-            }
-          - {
-              arch: x86_64,
-              os: maclegacy,
-              host: x86_64-apple-darwin,
-              target: x86_64-apple-darwin,
-              version: 1.73,
-              on: macos-11,
             }
     steps:
       - name: Install Rustup
@@ -207,19 +197,16 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-pc-windows-msvc,
-              version: "1.74",
               on: windows-2022,
             }
           - {
               arch: i686,
               target: i686-pc-windows-msvc,
-              version: "1.74",
               on: windows-2022,
             }
     steps:
       - uses: hecrj/setup-rust-action@v2
         with:
-          rust-version: "${{ matrix.job.version }}"
           targets: ${{ matrix.job.target }}
       - uses: actions/checkout@v4
       - name: Show Rust version
