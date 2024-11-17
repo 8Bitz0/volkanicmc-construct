@@ -1,7 +1,7 @@
 [package]
 name = "volkanicmc-construct"
-version = "0.2.0"
-authors = ["Alexander Hansen <alex@bitzmc.com>"]
+version = "0.3.0"
+authors = ["Alexander Hansen <alex@bitzero.me>"]
 edition = "2021"
 description = "Setup Minecraft servers by description"
 repository = "https://github.com/8Bitz0/volkanicmc-construct"
