@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/8Bitz0/volkanicmc-construct/refs/heads/main/schemas/format-2_draft1.json",
-  "template-format": 2,
+  "template-format": 3,
   "name": "Beta 1.7.3 Vanilla",
   "description": "Server running Minecraft Beta 1.7.3",
   "author": "VolkanicMC",

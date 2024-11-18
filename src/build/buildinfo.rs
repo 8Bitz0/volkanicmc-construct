@@ -4,7 +4,7 @@ use tokio::{fs, io::AsyncWriteExt};
 use tracing::{debug, error, info, warn};
 
 use crate::exec;
-use crate::template;
+use crate::template::{self, overlay::Overlay};
 use crate::vkstore;
 
 use super::job;
@@ -27,6 +27,8 @@ pub struct BuildInfo {
     path: Option<path::PathBuf>,
     #[serde(skip, default)]
     pub template: template::Template,
+    #[serde(skip, default)]
+    pub overlays: Vec<template::overlay::Overlay>,
     #[serde(skip)]
     pub jobs: Vec<job::Job>,
     #[serde(rename = "job-progress")]
@@ -50,9 +52,11 @@ impl BuildInfo {
     pub async fn new(
         store: &vkstore::VolkanicStore,
         template: template::Template,
+        overlays: Vec<Overlay>,
     ) -> Result<BuildInfo, BuildInfoError> {
         let mut build_info = BuildInfo {
             template,
+            overlays,
             // Populate the rest of the `BuildInfo` struct with the default values
             ..Default::default()
         };

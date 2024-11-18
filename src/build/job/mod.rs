@@ -53,6 +53,8 @@ pub enum JobError {
     NotAvailableInIncludeFolder(String),
     #[error("Archives cannot have variables (resource path: {0})")]
     ArchivesCannotHaveVariables(path::PathBuf),
+    #[error("Conflicting overlay runtimes")]
+    ConflictingRuntimes,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
