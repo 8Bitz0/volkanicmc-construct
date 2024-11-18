@@ -28,6 +28,9 @@
       }
     }
   ],
+  "exposed-ports": {
+    "minecraft": "25565/tcp"
+  },
   "runtime": {
     "jdk": {
       "version": "17",

@@ -949,6 +949,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "maplit2"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5be3fc94901ceb513dfa964ae5b0d7ef231f964ace599ccf048bb9aeaea4d9d9"
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1917,6 +1923,7 @@ dependencies = [
  "futures-util",
  "hex",
  "indicatif",
+ "maplit2",
  "reqwest",
  "schemars",
  "serde",

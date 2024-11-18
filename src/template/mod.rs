@@ -1,9 +1,11 @@
+use maplit2::hashmap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 pub mod manage;
 pub mod overlay;
+pub mod ports;
 pub mod resource;
 pub mod var;
 pub mod vkinclude;
@@ -11,6 +13,7 @@ pub mod vkinclude;
 mod parse;
 
 pub use parse::ParseError;
+use ports::PortMap;
 
 pub const TEMPLATE_FORMAT: usize = 3;
 
@@ -55,6 +58,9 @@ pub struct Template {
     pub version: Option<(u64, Option<u64>, Option<u64>)>,
     /// Variables necessary for the template
     pub variables: Vec<var::Var>,
+    /// Exposed ports
+    #[serde(rename = "exposed-ports")]
+    pub exposed_ports: PortMap,
     /// Server runtime software
     pub runtime: resource::ServerRuntimeResource,
     /// List of additional resources (e.g. plugins, mods, configs)
@@ -83,6 +89,9 @@ impl Default for Template {
                     default: Some("25565".into()),
                 },
             ],
+            exposed_ports: hashmap! {
+                "minecraft".into() => "25565/tcp".into(),
+            },
             runtime: resource::ServerRuntimeResource::Jdk {
                 version: "17".to_string(),
                 jar_path: PathBuf::from("server.jar"),
