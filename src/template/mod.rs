@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 pub mod manage;
+pub mod overlay;
 pub mod resource;
 pub mod var;
 pub mod vkinclude;
@@ -11,7 +12,7 @@ mod parse;
 
 pub use parse::ParseError;
 
-pub const TEMPLATE_FORMAT: usize = 2;
+pub const TEMPLATE_FORMAT: usize = 3;
 
 const AIKARS_FLAGS: &[&str] = &[
     "-XX:+AlwaysPreTouch",
@@ -40,30 +41,29 @@ const AIKARS_FLAGS: &[&str] = &[
 pub struct Template {
     #[serde(rename = "template-format")]
     pub template_format: usize,
-    /// Name of the template. The name should briefly describe and identify the template.
+    /// Name of the template. The name should briefly describe and identify the template
     ///
     /// Example: "1.12.2 Vanilla"
     pub name: String,
-    /// Longer description of the template.
+    /// Longer description of the template
     ///
     /// Example: "Server running vanilla Minecraft 1.12.2"
     pub description: String,
-    /// Simple identifier of the author.
+    /// Simple identifier of the author
     pub author: Option<String>,
-    /// Version of the template.
+    /// Version of the template
     pub version: Option<(u64, Option<u64>, Option<u64>)>,
-    /// Variables neccessary for the template.
+    /// Variables necessary for the template
     pub variables: Vec<var::Var>,
-    /// Server runtime software.
+    /// Server runtime software
     pub runtime: resource::ServerRuntimeResource,
-    /// List of additional resources (e.g. plugins, mods, configs, etc.)
+    /// List of additional resources (e.g. plugins, mods, configs)
     pub resources: Vec<resource::GenericResource>,
-    /// List of files which should be saved (e.g. worlds, whitelists, etc.)
+    /// List of files which should be saved (e.g. worlds, whitelists)
     pub saveables: Vec<PathBuf>,
 }
 
 impl Template {
-    // TODO: Should use a generic `Path` type
     pub async fn import<P: AsRef<Path>>(file: P) -> Result<Self, ParseError> {
         parse::file_to_template(file.as_ref()).await
     }

@@ -1,4 +1,4 @@
-#![deny(warnings)]
+// #![deny(warnings)]
 
 use clap::{Parser, Subcommand};
 use std::path;
@@ -34,6 +34,8 @@ enum Command {
     /// Build in the current directory using a template from the given path
     Build {
         path: path::PathBuf,
+        #[arg(short = 'o', long)]
+        overlay: Vec<path::PathBuf>,
         #[arg(short = 'f', long)]
         force: bool,
         #[arg(short = 'v', long)]
@@ -52,6 +54,7 @@ enum Command {
     Check { path: path::PathBuf },
     /// Runs the build in the current directory. Only use for testing with trusted templates. Do not use for execution in production.
     Run,
+    /// Template management commands
     #[command(subcommand)]
     Template(TemplateCommand),
     /// Create a Bash script from the execution information of an existing build
@@ -73,6 +76,17 @@ enum TemplateCommand {
     /// Prints a basic template
     Create,
     /// Generate a JSON schema for templates
+    GenerateSchema,
+    /// Overlay management commands
+    #[command(subcommand)]
+    Overlay(OverlayCommand),
+}
+
+#[derive(Debug, Clone, Subcommand)]
+enum OverlayCommand {
+    /// Prints a basic template overlay
+    Create,
+    /// Generate a JSON schema for template overlays
     GenerateSchema,
 }
 
@@ -108,6 +122,7 @@ async fn main() {
     match args.command {
         Command::Build {
             path,
+            overlay: overlay_paths,
             force,
             user_vars,
             additional_jvm_args,
@@ -117,11 +132,28 @@ async fn main() {
             init_log().await;
 
             let template = parse_template(path).await;
+            let mut overlays = vec![];
+
+            for p in overlay_paths {
+                match template::overlay::Overlay::import(p).await {
+                    Ok(overlay) => {
+                        info!("Overlay \"{}\" parsed correctly", overlay.name);
+
+                        overlays.push(overlay);
+                    }
+                    Err(e) => {
+                        error!("Failed to parse overlay: {}", e);
+                        
+                        std::process::exit(1);
+                    }
+                }
+            }
 
             let store = vkstore_init(store_d, build_d, downloads_d).await;
 
             match build::build(
                 template,
+                overlays,
                 store.clone(),
                 force,
                 user_vars,
@@ -225,6 +257,27 @@ async fn main() {
 
                 println!("{}", serde_jsonc::to_string(&schema).unwrap());
             }
+            TemplateCommand::Overlay(command) => match command {
+                OverlayCommand::Create => {
+                    println!(
+                        "{}",
+                        match serde_jsonc::to_string_pretty(&template::overlay::Overlay::default()) {
+                            Ok(json) => json,
+                            Err(e) => {
+                                init_log().await;
+
+                                error!("Failed to serialize overlay: {}", e);
+                                std::process::exit(1);
+                            }
+                        }
+                    );
+                }
+                OverlayCommand::GenerateSchema => {
+                    let schema = schemars::schema_for!(template::overlay::Overlay);
+
+                    println!("{}", serde_jsonc::to_string(&schema).unwrap());
+                }
+            },
         },
         Command::ExecScript { format } => {
             let store = vkstore_init(store_d, build_d, downloads_d).await;
@@ -289,8 +342,14 @@ async fn main() {
 
             let mut export = saveable::ExportInfo::new(store).await;
 
-            for o in build_info.template.saveables {
-                match export.add(o).await {
+            let mut saveables = build_info.template.saveables.clone();
+
+            for o in build_info.overlays {
+                saveables.extend(o.saveables);
+            }
+
+            for s in saveables {
+                match export.add(s).await {
                     Ok(()) => {}
                     Err(e) => {
                         error!("Failed to export build: {}", e);

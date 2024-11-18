@@ -8,7 +8,7 @@ mod prepare_jdk;
 use crate::exec;
 use crate::hostinfo;
 use crate::resources::{self, JdkConfig};
-use crate::template;
+use crate::template::{self, overlay::Overlay};
 use crate::vkstore;
 
 pub use buildinfo::{BuildInfo, BuildInfoError};
@@ -35,6 +35,7 @@ pub enum BuildError {
 
 pub async fn build(
     template: template::Template,
+    overlays: Vec<Overlay>,
     store: vkstore::VolkanicStore,
     force: bool,
     user_vars_raw: Vec<String>,
@@ -76,7 +77,13 @@ pub async fn build(
         .map_err(BuildError::VarProcess)?;
 
     info!("Creating jobs...");
-    let jobs = job::create_jobs(&template, jdk_config, &variables, prevent_verify)
+    let jobs = job::create_jobs(
+        &template,
+        &overlays,
+        jdk_config,
+        &variables,
+        prevent_verify
+    )
         .await
         .map_err(BuildError::Job)?;
 
@@ -104,7 +111,11 @@ pub async fn build(
 
             build_info
         } else {
-            let mut build_info = buildinfo::BuildInfo::new(&store, template.clone())
+            let mut build_info = buildinfo::BuildInfo::new(
+                &store,
+                template.clone(),
+                overlays.clone(),
+            )
                 .await
                 .map_err(BuildError::BuildInfo)?;
 

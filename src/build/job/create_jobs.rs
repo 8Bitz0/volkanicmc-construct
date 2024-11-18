@@ -7,14 +7,34 @@ use super::{Job, JobAction, JobError};
 
 pub async fn create_jobs(
     template: &crate::template::Template,
+    overlays: &Vec<template::overlay::Overlay>,
     jdk_config: JdkConfig,
     var_map: &template::var::VarMap,
     no_verify: bool,
 ) -> Result<Vec<Job>, JobError> {
     let mut jobs = vec![];
 
+    let mut overlay_runtime = None;
+
+    for o in overlays {
+        if let Some(r) = &o.runtime {
+            if overlay_runtime.is_some() {
+                error!("Only one overlay can set the runtime configuration at once");
+                return Err(JobError::ConflictingRuntimes);
+            }
+
+            overlay_runtime = Some(r.clone());
+            break;
+        }
+    }
+    
+    let runtime = match overlay_runtime {
+        Some(r) => r,
+        None => template.runtime.clone(),
+    };
+
     // Setup JDK
-    match &template.runtime {
+    match runtime {
         template::resource::ServerRuntimeResource::Jdk {
             version,
             jar_path: _,
@@ -37,8 +57,14 @@ pub async fn create_jobs(
         }
     }
 
+    let mut resources = template.resources.clone();
+
+    for o in overlays {
+        resources.extend(o.resources.clone());
+    }
+
     // Setup additional resources
-    for resource in &template.resources {
+    for resource in resources {
         match resource {
             template::resource::GenericResource::Remote {
                 url,
@@ -114,7 +140,7 @@ pub async fn create_jobs(
             } => {
                 // Pre-checks
                 let include = vkinclude::VolkanicInclude::new().await;
-                if include.get(include_id).await.is_none() {
+                if include.get(&include_id).await.is_none() {
                     error!("Did not find \"{}\" in include directory.", include_id);
                     return Err(JobError::NotAvailableInIncludeFolder(
                         include_id.to_string(),

@@ -1,0 +1,28 @@
+{
+  "template-format": 3,
+  "name": "Add GeyserMC to Spigot",
+  "description": "Add GeyserMC to a Spigot server",
+  "author": "VolkanicMC",
+  "version": [
+    1,
+    0,
+    0
+  ],
+  "resources": [
+    {
+      "remote": {
+        "url": "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot",
+        "override-name": "Geyser-Spigot.jar",
+        "template-path": "plugins/Geyser-Spigot.jar"
+      }
+    },
+    {
+      "remote": {
+        "url": "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot",
+        "override-name": "floodgate-spigot.jar",
+        "template-path": "plugins/floodgate-spigot.jar"
+      }
+    }
+  ],
+  "saveables": []
+}

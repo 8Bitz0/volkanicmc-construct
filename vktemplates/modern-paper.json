@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/8Bitz0/volkanicmc-construct/refs/heads/main/schemas/format-2_draft1.json",
-  "template-format": 2,
+  "template-format": 3,
   "name": "1.20.4 Paper",
   "description": "Server running Minecraft 1.20.4 with PaperMC",
   "author": "VolkanicMC",
@@ -64,13 +63,6 @@
         "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar",
         "sha512": "8a9fb79379888b0e28752eda228530cc2633562641715c32e62d67b59213d5c11fe8be6b22cb103da5146f1fba192636234e82c382022dee4671e19e641ae355",
         "template-path": "server.jar"
-      }
-    },
-    {
-      "remote": {
-        "url": "https://ci.lucko.me/job/spark/411/artifact/spark-bukkit/build/libs/spark-1.10.66-bukkit.jar",
-        "sha512": "4c58c6cdad00b8839249b850187dc0824788b5685020ab0320d66026169dc8f0b2d5df125367f1d4f431225529befd6d66b5d49cb2e753ac34bd442926965d5b",
-        "template-path": "plugins/spark.jar"
       }
     },
     {
