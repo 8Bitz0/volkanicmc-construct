@@ -1,7 +1,7 @@
 {
   "template-format": 3,
-  "name": "1.20.4 Paper",
-  "description": "Server running Minecraft 1.20.4 with PaperMC",
+  "name": "1.21.4 Paper",
+  "description": "Server running Minecraft 1.21.4 with PaperMC",
   "author": "VolkanicMC",
   "version": [
     1,
@@ -30,7 +30,7 @@
   ],
   "runtime": {
     "jdk": {
-      "version": "17",
+      "version": "21",
       "jar-path": "server.jar",
       "jdk-args": [
         "-XX:+AlwaysPreTouch",
@@ -60,14 +60,14 @@
   "resources": [
     {
       "remote": {
-        "url": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar",
-        "sha512": "8a9fb79379888b0e28752eda228530cc2633562641715c32e62d67b59213d5c11fe8be6b22cb103da5146f1fba192636234e82c382022dee4671e19e641ae355",
+        "url": "https://api.papermc.io/v2/projects/paper/versions/1.21.4/builds/225/downloads/paper-1.21.4-225.jar",
+        "sha512": "1e82f665cc342ef05b5231eb2609b99d0b438ef929b5313a0f4d50e5373ae504b6bcda53054c7e91930d62b2e3f7ed1710b2616f3bf6a435a191a628cc6bddd5",
         "template-path": "server.jar"
       }
     },
     {
       "include": {
-        "id": "1-20-paper.properties",
+        "id": "1-21-paper.properties",
         "use-variables": "dollar-curly",
         "template-path": "server.properties"
       }
