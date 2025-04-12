@@ -36,17 +36,17 @@ jobs:
           - {
               arch: x86_64,
               target: x86_64-unknown-linux-gnu,
-              on: ubuntu-20.04,
+              on: ubuntu-22.04,
             }
           - {
               arch: aarch64,
               target: aarch64-unknown-linux-gnu,
-              on: ubuntu-20.04,
+              on: ubuntu-22.04,
             }
           - {
               arch: armv7,
               target: armv7-unknown-linux-gnueabihf,
-              on: ubuntu-20.04,
+              on: ubuntu-22.04,
             }
     steps:
       - uses: actions/checkout@v4
@@ -224,7 +224,7 @@ jobs:
       - name: Determine package naming
         shell: pwsh
         run: |
-          "EXE_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "EXE_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           "MSI_NAME=${{ env.PKG_NAME }}_${{ env.VERSION }}-${{ env.REVISION }}_win-${{ matrix.job.arch }}-installer" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Build Windows MSI installer
         run: |
