@@ -8,10 +8,11 @@ repository = "https://github.com/8Bitz0/volkanicmc-construct"
 license = "MIT"
 keywords = ["minecraft"]
 categories = ["command-line-utilities"]
+rust-version = "1.81.0"
 
 [dependencies]
 base64 = "0.22.0"
-clap = { version = "4.5.35", features = ["derive"] }
+clap = { version = "4.5.37", features = ["derive"] }
 copy_dir = "0.1.3"
 flate2 = "1.1.1"
 futures-util = "0.3.31"
@@ -22,11 +23,11 @@ schemars = { version = "0.8.22" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_jsonc = "1.0.108"
 serde_yaml = "0.9.27"
-sha2 = "0.10.8"
-sysinfo = "0.34.2"
+sha2 = "0.10.9"
+sysinfo = "0.35.0"
 tar = "0.4.44"
 thiserror = "2.0.12"
-tokio = { version = "1.44.2", features = ["fs", "macros", "rt-multi-thread", "tokio-macros", "tracing"] }
+tokio = { version = "1.45.0", features = ["fs", "macros", "rt-multi-thread", "tokio-macros", "tracing"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
 uuid = { version = "1.16.0", features = ["fast-rng", "v4"] }
