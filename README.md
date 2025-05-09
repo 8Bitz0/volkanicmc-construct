@@ -1,27 +1,19 @@
 ![GitHub License](https://img.shields.io/github/license/8Bitz0/volkanicmc-construct)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/8Bitz0/volkanicmc-construct)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/8Bitz0/volkanicmc-construct)
-![Github Created At](https://img.shields.io/github/created-at/8Bitz0/volkanicmc-construct)
 
 # volkanicmc-construct
 
 Automatically deploy any Minecraft server by description.
 
 ## Notice
-**VolkanicMC Construct is still early-alpha software. Do not use in production.**
+**VolkanicMC Construct is still alpha software and not meant for use in production environments.**
 
 ## Usage
 Command-line usage can be provided with the following command:
 ```sh
 vkconstruct help
 ```
-
-## Compatibility
-- Windows: Windows 10 (32-bit or 64-bit) or later
-- macOS: 10.15 or later
-- Linux: Varies based on distribution
-
-NOTE: These only apply to the provided binaries.
 
 ## Getting started
 
@@ -37,18 +29,22 @@ This command prints a basic but functional template. We then redirect that outpu
 vkconstruct build my-template.json
 ```
 
-Append `--force` if you would like to allow overwriting the previous build.
+Append `--force` or `-f` to allow overwriting the previous build.
 
 ### Run the build
 ```sh
 vkconstruct run
 ```
 
-This works fine for quick local testing, but shouldn't be considered secure. Ideally, you should generate a shell script for executing the server.
+This works fine for local testing, but isn't considered secure. Ideally, you'd generate a shell script for starting the server.
 
 ```sh
 vkconstruct exec-script bash > start.sh && chmod +x start.sh
 ./start.sh
 ```
 
-Currently, only `sh` shell scripts can be generated.
+Or for batch scripts:
+
+```
+vkconstruct exec-script batch
+```
