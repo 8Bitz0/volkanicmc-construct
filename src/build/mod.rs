@@ -7,7 +7,7 @@ mod prepare_jdk;
 
 use crate::exec;
 use crate::hostinfo;
-use crate::resources::{self, JdkConfig};
+use crate::resources::{self, JdkLookup};
 use crate::template::{self, overlay::Overlay};
 use crate::vkstore;
 
@@ -22,9 +22,7 @@ pub enum BuildError {
     #[error("Unknown architecture")]
     UnknownArchitecture,
     #[error("Job error: {0}")]
-    Job(job::JobError),
-    #[error("Resource error: {0}")]
-    ResourceLoad(resources::ResourceLoadError),
+    Job(job::Error),
     #[error("Store error: {0}")]
     Store(vkstore::StoreError),
     #[error("Build is already present")]
@@ -65,9 +63,7 @@ pub async fn build(
         user_vars.insert(name, value);
     }
 
-    let jdk_config = JdkConfig::parse_list()
-        .await
-        .map_err(BuildError::ResourceLoad)?;
+    let jdk_config = JdkLookup::new();
 
     info!("Creating template variables...");
     let mut variables = template::var::VarMap::new();

@@ -1,23 +1,14 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[allow(clippy::enum_variant_names)]
 pub enum Os {
-    #[serde(rename = "android")]
-    Android,
     #[serde(rename = "freebsd")]
     FreeBsd,
-    #[serde(rename = "ios")]
-    Ios,
-    #[serde(rename = "mac")]
-    Mac,
-    #[serde(rename = "netbsd")]
-    NetBsd,
-    #[serde(rename = "openbsd")]
-    OpenBsd,
-    #[serde(rename = "dragonfly")]
-    Dragonfly,
-    #[serde(rename = "solaris")]
-    Solaris,
+    #[serde(rename = "macos")]
+    MacOs,
     #[serde(rename = "windows")]
     Windows,
     #[serde(rename = "alpine")]
@@ -33,14 +24,8 @@ impl<'de> Deserialize<'de> for Os {
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
-            "android" => Ok(Os::Android),
             "freebsd" => Ok(Os::FreeBsd),
-            "ios" => Ok(Os::Ios),
-            "mac" => Ok(Os::Mac),
-            "netbsd" => Ok(Os::NetBsd),
-            "openbsd" => Ok(Os::OpenBsd),
-            "dragonfly" => Ok(Os::Dragonfly),
-            "solaris" => Ok(Os::Solaris),
+            "macos" => Ok(Os::MacOs),
             "windows" => Ok(Os::Windows),
             "alpine" => Ok(Os::Alpine),
             "linux" => Ok(Os::Linux),
@@ -59,26 +44,12 @@ pub enum Arch {
     Arm,
     #[serde(rename = "arm64")]
     Arm64,
-    #[serde(rename = "m68k")]
-    M68k,
-    #[serde(rename = "csky")]
-    Csky,
-    #[serde(rename = "mips")]
-    Mips,
-    #[serde(rename = "mips64")]
-    Mips64,
     #[serde(rename = "ppc")]
     PowerPc,
     #[serde(rename = "ppc64")]
     PowerPc64,
     #[serde(rename = "riscv64")]
     RiscV64,
-    #[serde(rename = "s390x")]
-    S390x,
-    #[serde(rename = "sparc")]
-    Sparc,
-    #[serde(rename = "sparc64")]
-    Sparc64,
 }
 
 impl<'de> Deserialize<'de> for Arch {
@@ -92,16 +63,9 @@ impl<'de> Deserialize<'de> for Arch {
             "amd64" => Ok(Arch::Amd64),
             "arm" => Ok(Arch::Arm),
             "arm64" => Ok(Arch::Arm64),
-            "m68k" => Ok(Arch::M68k),
-            "csky" => Ok(Arch::Csky),
-            "mips" => Ok(Arch::Mips),
-            "mips64" => Ok(Arch::Mips64),
             "ppc" => Ok(Arch::PowerPc),
             "ppc64" => Ok(Arch::PowerPc64),
             "riscv64" => Ok(Arch::RiscV64),
-            "s390x" => Ok(Arch::S390x),
-            "sparc" => Ok(Arch::Sparc),
-            "sparc64" => Ok(Arch::Sparc64),
             _ => Err(serde::de::Error::custom(format!(
                 "Invalid architecture: {}",
                 s
@@ -113,20 +77,26 @@ impl<'de> Deserialize<'de> for Arch {
 impl Os {
     pub async fn get() -> Option<Os> {
         Some(match std::env::consts::OS {
-            "android" => Os::Android,
             "freebsd" => Os::FreeBsd,
-            "ios" => Os::Ios,
-            "macos" => Os::Mac,
-            "netbsd" => Os::NetBsd,
-            "openbsd" => Os::NetBsd,
-            "dragonfly" => Os::Dragonfly,
-            "solaris" => Os::Solaris,
+            "macos" => Os::MacOs,
             "windows" => Os::Windows,
             "linux" => match sysinfo::System::distribution_id().as_str() {
                 "alpine" => Os::Alpine,
                 _ => Os::Linux,
             },
             _ => return None,
+        })
+    }
+}
+
+impl Display for Os {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Os::FreeBsd => "freebsd",
+            Os::MacOs => "macos",
+            Os::Windows => "windows",
+            Os::Linux => "linux",
+            Os::Alpine => "alpine",
         })
     }
 }
@@ -138,17 +108,24 @@ impl Arch {
             "x86_64" => Arch::Amd64,
             "arm" => Arch::Arm,
             "aarch64" => Arch::Arm64,
-            "m68k" => Arch::M68k,
-            "csky" => Arch::Csky,
-            "mips" => Arch::Mips,
-            "mips64" => Arch::Mips64,
             "powerpc" => Arch::PowerPc,
             "powerpc64" => Arch::PowerPc64,
             "riscv64" => Arch::RiscV64,
-            "s390x" => Arch::S390x,
-            "sparc" => Arch::Sparc,
-            "sparc64" => Arch::Sparc64,
             _ => return None,
+        })
+    }
+}
+
+impl Display for Arch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Arch::X86 => "x86",
+            Arch::Amd64 => "amd64",
+            Arch::Arm => "arm",
+            Arch::Arm64 => "arm64",
+            Arch::PowerPc => "ppc",
+            Arch::PowerPc64 => "ppc64",
+            Arch::RiscV64 => "riscv64"
         })
     }
 }

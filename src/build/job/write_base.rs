@@ -5,18 +5,18 @@ use tracing::error;
 
 use crate::{fsobj, vkstore::VolkanicStore};
 
-use super::JobError;
+use super::Error;
 
 pub async fn write_base64<P: AsRef<Path>, T: std::fmt::Display>(
     store: &VolkanicStore,
     template_path: P,
     contents: T,
-) -> Result<(), JobError> {
+) -> Result<(), Error> {
     let abs_path = store.build_path.join(template_path.as_ref());
 
     fsobj::create_ancestors(&abs_path)
         .await
-        .map_err(JobError::CreateFilesystemAncestors)?;
+        .map_err(Error::CreateFilesystemAncestors)?;
 
     let base64_config = base64::engine::GeneralPurposeConfig::new();
     let base64_engine =
@@ -24,12 +24,12 @@ pub async fn write_base64<P: AsRef<Path>, T: std::fmt::Display>(
 
     let contents = base64_engine.decode(contents.to_string()).map_err(|err| {
         error!("Failed to decode base64: {}", err);
-        JobError::Base64(err)
+        Error::Base64(err)
     })?;
 
     fs::write(&abs_path, contents)
         .await
-        .map_err(JobError::Filesystem)?;
+        .map_err(Error::Filesystem)?;
 
     Ok(())
 }

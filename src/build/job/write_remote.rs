@@ -8,7 +8,7 @@ use crate::fsobj;
 use crate::template::resource::ArchiveInfo;
 use crate::vkstore::VolkanicStore;
 
-use super::JobError;
+use super::Error;
 
 pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
     store: &VolkanicStore,
@@ -18,12 +18,12 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
     sha512: Option<T>,
     user_agent: Option<T>,
     override_name: Option<T>,
-) -> Result<(), JobError> {
+) -> Result<(), Error> {
     let abs_path = store.build_path.join(template_path);
 
     fsobj::create_ancestors(&abs_path)
         .await
-        .map_err(JobError::CreateFilesystemAncestors)?;
+        .map_err(Error::CreateFilesystemAncestors)?;
 
     let name = {
         match override_name {
@@ -32,7 +32,7 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
                 if let Some(name) = misc::get_remote_filename(url.to_string()).await {
                     name
                 } else {
-                    return Err(JobError::NoFileNameInPath(abs_path));
+                    return Err(Error::NoFileNameInPath(abs_path));
                 }
             }
         }
@@ -48,14 +48,14 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
         name,
         user_agent,
     )
-    .map_err(JobError::Download)
+    .map_err(Error::Download)
     .await?;
 
     match archive {
         Some(t) => {
             let archive_path = misc::extract(store.clone(), p, t.archive_format.clone())
                 .await
-                .map_err(JobError::ExtractionError)?;
+                .map_err(Error::Extraction)?;
             let a_path_inner = archive_path.join(t.inner_path.clone());
 
             match fsobj::fs_obj(a_path_inner.clone()).await {
@@ -70,7 +70,7 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
                         }
                         Err(e) => {
                             debug!("Errors ocurred during JDK copy: {:#?}", e);
-                            return Err(JobError::DirectoryCopyFailed(a_path_inner));
+                            return Err(Error::DirectoryCopyFailed(a_path_inner));
                         }
                     }
 
@@ -82,11 +82,11 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
                                 info!("Remove post-removal directory: \"{}\"", p.to_string_lossy());
                                 fs::remove_dir_all(abs_rm_path)
                                     .await
-                                    .map_err(JobError::Filesystem)?;
+                                    .map_err(Error::Filesystem)?;
                             }
                             fsobj::FsObjectType::File => fs::remove_file(abs_rm_path)
                                 .await
-                                .map_err(JobError::Filesystem)?,
+                                .map_err(Error::Filesystem)?,
                             fsobj::FsObjectType::None => {
                                 error!(
                                     "Post-removal inner-archive path not found: {}",
@@ -99,15 +99,15 @@ pub async fn write_remote<P: AsRef<Path>, T: std::fmt::Display>(
                 fsobj::FsObjectType::File => {
                     fs::copy(&a_path_inner, &abs_path)
                         .await
-                        .map_err(JobError::Filesystem)?;
+                        .map_err(Error::Filesystem)?;
                 }
                 fsobj::FsObjectType::None => {
-                    return Err(JobError::InnerArchivePathNotFound(a_path_inner))
+                    return Err(Error::InnerArchivePathNotFound(a_path_inner))
                 }
             }
         }
         None => {
-            fs::copy(p, abs_path).await.map_err(JobError::Filesystem)?;
+            fs::copy(p, abs_path).await.map_err(Error::Filesystem)?;
         }
     }
 

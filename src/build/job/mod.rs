@@ -4,6 +4,7 @@ use tokio::fs;
 use tracing::error;
 
 use crate::fsobj;
+use crate::resources;
 use crate::resources::Jdk;
 use crate::template;
 use crate::vkstore;
@@ -26,15 +27,17 @@ use write_base::write_base64;
 use write_remote::write_remote;
 
 #[derive(Debug, thiserror::Error)]
-pub enum JobError {
+pub enum Error {
     #[error("No JDK found for your system (version: {0})")]
     JdkNotFound(String),
+    #[error("Foojay Disco lookup error: {0}")]
+    DiscoLookup(resources::Error),
     #[error("Filesystem error: {0}")]
     Filesystem(tokio::io::Error),
     #[error("Inner archive path doesn't exist: {0}")]
     InnerArchivePathNotFound(path::PathBuf),
     #[error("Extraction error: {0}")]
-    ExtractionError(misc::ExtractionError),
+    Extraction(misc::ExtractionError),
     #[error("No file name found in path: {0}")]
     NoFileNameInPath(path::PathBuf),
     #[error("Creating path ancestor directories failed: {0}")]
@@ -46,7 +49,7 @@ pub enum JobError {
     #[error("Download error: {0}")]
     Download(misc::DownloadError),
     #[error("Prepare JDK error: {0}")]
-    PrepareJdk(prepare_jdk::PrepareJdkError),
+    PrepareJdk(prepare_jdk::Error),
     #[error("Build info error: {0}")]
     BuildInfo(buildinfo::BuildInfoError),
     #[error("Not available in Volkanic include folder: {0}")]
@@ -99,14 +102,14 @@ pub enum JobAction {
 }
 
 impl JobAction {
-    pub async fn execute(&self, store: &vkstore::VolkanicStore) -> Result<(), JobError> {
+    pub async fn execute(&self, store: &vkstore::VolkanicStore) -> Result<(), Error> {
         match self {
             JobAction::CreateDir {
                 path: template_path,
             } => {
                 fs::create_dir_all(store.build_path.join(template_path))
                     .await
-                    .map_err(JobError::Filesystem)?;
+                    .map_err(Error::Filesystem)?;
             }
             JobAction::WriteFileBase64 {
                 path: template_path,
@@ -146,7 +149,7 @@ impl JobAction {
             JobAction::PrepareJdk { jdk, no_verify } => {
                 prepare_jdk::prepare_jdk(store.clone(), jdk.clone(), *no_verify)
                     .await
-                    .map_err(JobError::PrepareJdk)?;
+                    .map_err(Error::PrepareJdk)?;
             }
         }
 
@@ -163,7 +166,7 @@ pub struct Job {
 pub async fn execute_jobs(
     store: vkstore::VolkanicStore,
     build_info: &mut buildinfo::BuildInfo,
-) -> Result<(), JobError> {
+) -> Result<(), Error> {
     build_info.job_progress = 0;
 
     for job in &build_info.jobs {
@@ -171,7 +174,7 @@ pub async fn execute_jobs(
 
         build_info.job_progress += 1;
 
-        build_info.update().await.map_err(JobError::BuildInfo)?;
+        build_info.update().await.map_err(Error::BuildInfo)?;
     }
 
     Ok(())

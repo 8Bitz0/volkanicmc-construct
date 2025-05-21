@@ -6,29 +6,29 @@ use tokio::io::AsyncWriteExt;
 use crate::template::var::{string_replace, VarFormat};
 use crate::vkstore::VolkanicStore;
 
-use super::JobError;
+use super::Error;
 
 pub async fn process_vars<P: AsRef<Path>>(
     store: &VolkanicStore,
     format: VarFormat,
     template_path: P,
     variables: &HashMap<String, String>,
-) -> Result<(), JobError> {
+) -> Result<(), Error> {
     let abs_path = store.build_path.join(template_path.as_ref());
 
     let mut contents = fs::read_to_string(&abs_path)
         .await
-        .map_err(JobError::Filesystem)?;
+        .map_err(Error::Filesystem)?;
 
     contents = string_replace(contents, variables, format.clone()).await;
 
     let mut f = fs::File::create(&abs_path)
         .await
-        .map_err(JobError::Filesystem)?;
+        .map_err(Error::Filesystem)?;
 
     f.write_all(contents.as_bytes())
         .await
-        .map_err(JobError::Filesystem)?;
+        .map_err(Error::Filesystem)?;
 
     Ok(())
 }

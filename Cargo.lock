@@ -427,6 +427,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
+name = "foojay_disco"
+version = "0.1.0"
+source = "git+https://github.com/8Bitz0/foojay-disco.git?rev=32851e40ec162734ba10d293eb8f5f0c7dc3332d#32851e40ec162734ba10d293eb8f5f0c7dc3332d"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "url",
+]
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -442,6 +454,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10"
 dependencies = [
  "futures-core",
+ "futures-sink",
 ]
 
 [[package]]
@@ -1216,6 +1229,7 @@ checksum = "d19c46a6fdd48bc4dab94b6103fccc55d34c67cc0ad04653aad4ea2a07cd7bbb"
 dependencies = [
  "base64",
  "bytes",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "http",
@@ -1906,6 +1920,7 @@ dependencies = [
  "clap",
  "copy_dir",
  "flate2",
+ "foojay_disco",
  "futures-util",
  "hex",
  "indicatif",

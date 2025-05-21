@@ -1,17 +1,17 @@
 use tracing::error;
 
-use crate::resources::JdkConfig;
+use crate::resources::JdkLookup;
 use crate::template::{self, vkinclude};
 
-use super::{Job, JobAction, JobError};
+use super::{Job, JobAction, Error};
 
 pub async fn create_jobs(
     template: &crate::template::Template,
     overlays: &Vec<template::overlay::Overlay>,
-    jdk_config: JdkConfig,
+    jdk_lookup: JdkLookup,
     var_map: &template::var::VarMap,
     no_verify: bool,
-) -> Result<Vec<Job>, JobError> {
+) -> Result<Vec<Job>, Error> {
     let mut jobs = vec![];
 
     let mut overlay_runtime = None;
@@ -20,7 +20,7 @@ pub async fn create_jobs(
         if let Some(r) = &o.runtime {
             if overlay_runtime.is_some() {
                 error!("Only one overlay can set the runtime configuration at once");
-                return Err(JobError::ConflictingRuntimes);
+                return Err(Error::ConflictingRuntimes);
             }
 
             overlay_runtime = Some(r.clone());
@@ -44,11 +44,21 @@ pub async fn create_jobs(
             jobs.push(Job {
                 title: "Prepare JDK".into(),
                 action: JobAction::PrepareJdk {
-                    jdk: match jdk_config.find(&version, None).await {
-                        Some(jdk) => jdk,
-                        None => {
-                            error!("No JDK found for your system (version: {})", version);
-                            return Err(JobError::JdkNotFound(version.to_string()));
+                    jdk: {
+                        let jdk = match jdk_lookup.find(&version, None).await {
+                            Ok(jdk) => jdk,
+                            Err(e) => {
+                                error!("Failed to find JDK via Foojay Disco: {e}");
+                                return Err(Error::DiscoLookup(e))
+                            }
+                        };
+
+                        match jdk {
+                            Some(jdk) => jdk,
+                            None => {
+                                error!("No JDK found for your system (version: {})", version);
+                                return Err(Error::JdkNotFound(version.to_string()));
+                            }
                         }
                     },
                     no_verify,
@@ -91,7 +101,7 @@ pub async fn create_jobs(
                     if archive.is_some() {
                         error!("Variable substitution is not supported for archives");
 
-                        return Err(JobError::ArchivesCannotHaveVariables(
+                        return Err(Error::ArchivesCannotHaveVariables(
                             override_name
                                 .clone()
                                 .unwrap_or(path.clone().to_string_lossy().to_string())
@@ -142,7 +152,7 @@ pub async fn create_jobs(
                 let include = vkinclude::VolkanicInclude::new().await;
                 if include.get(&include_id).await.is_none() {
                     error!("Did not find \"{}\" in include directory.", include_id);
-                    return Err(JobError::NotAvailableInIncludeFolder(
+                    return Err(Error::NotAvailableInIncludeFolder(
                         include_id.to_string(),
                     ));
                 }
