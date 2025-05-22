@@ -1,4 +1,4 @@
-use std::path;
+use std::path::{self, Path, PathBuf};
 use tokio::fs;
 use tracing::{debug, error, info};
 
@@ -27,15 +27,113 @@ pub enum Error {
     NoNameForUrl(String),
 }
 
+/// Checks if a given path points to a valid JDK home directory.
+///
+/// A directory is considered a JDK home if it exists, is a directory,
+/// and contains `bin/java` or `bin/`
+async fn is_valid_jdk_home(path_to_check: &Path) -> bool {
+    // Ensure the path itself is a directory
+    match fs::metadata(path_to_check).await {
+        Ok(meta) if meta.is_dir() => {
+            // Path is a directory, now check for Java executables
+        }
+        _ => return false, // Not a directory or error accessing metadata
+    }
+
+    let bin_dir = path_to_check.join("bin");
+
+    if !bin_dir.is_dir() | bin_dir.is_symlink() {
+        return false;
+    }
+
+    let exec_names = ["java", "java.exe"];
+
+    for e in exec_names {
+        let java_path = bin_dir.join(e);
+
+        // Check if java executable exists and is a file
+        match fs::metadata(&java_path).await {
+            Ok(meta) => {
+                if meta.is_file() {
+                    return true;
+                }
+            },
+            Err(e) => {
+                debug!("Did not find Java executable: {} (error: {})", java_path.to_string_lossy(), e);
+            },
+        };
+    }
+
+    false
+}
+
+/// Reads a directory and tries to find a JDK home within it or its direct subdirectories.
+///
+/// It first checks if the `base_dir` itself is a JDK home.
+/// If not, it then checks each direct subdirectory of `base_dir`.
+/// Returns `Ok(Some(PathBuf))` if a JDK home is found, `Ok(None)` if not found,
+/// or `Err(io::Error)` if there's an issue reading the directory.
+async fn find_jdk_home<P: AsRef<Path>>(base_dir: P) -> Result<Option<PathBuf>, std::io::Error> {
+    let base_path = base_dir.as_ref().to_path_buf();
+
+    // 1. Check if the base_dir itself is a JDK home
+    if is_valid_jdk_home(&base_path).await {
+        return Ok(Some(base_path));
+    }
+
+    // 2. Check all subdirectories recursively using a stack-based approach
+    let mut dirs_to_check = vec![base_path.clone()];
+
+    while let Some(current_dir) = dirs_to_check.pop() {
+        let mut entries = match fs::read_dir(&current_dir).await {
+            Ok(entries) => entries,
+            Err(e) => {
+                debug!("Error reading directory {:?}: {}", current_dir, e);
+                continue;
+            }
+        };
+
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            let entry_path = entry.path();
+            
+            if let Ok(metadata) = fs::metadata(&entry_path).await {
+                // Check if the entry is a directory
+                if metadata.is_dir() {
+                    // Check if the directory is a valid Java home
+                    if is_valid_jdk_home(&entry_path).await {
+                        debug!("{} is a valid JDK home", entry_path.to_string_lossy());
+                        // Remove parts of the path before the package root
+                        match entry_path.strip_prefix(&base_dir) {
+                            Ok(relative) => return Ok(Some(relative.to_path_buf())),
+                            Err(e) => {
+                                error!(
+                                    "Failed to find relative path for: {}, error: {}", 
+                                    entry_path.to_string_lossy(), 
+                                    e
+                                );
+                            }
+                        }
+                    } else {
+                        // Add this directory to check its contents later
+                        dirs_to_check.push(entry_path);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(None) // No JDK home found
+}
+
 pub async fn prepare_jdk(
     store: vkstore::VolkanicStore,
     jdk: Jdk,
     no_verify: bool,
 ) -> Result<(), Error> {
-    let jdk_name = match get_remote_filename(&jdk.url).await {
+    let jdk_name = jdk.file_name.unwrap_or(match get_remote_filename(&jdk.url).await {
         Some(s) => s,
         None => return Err(Error::NoNameForUrl(jdk.url.clone())),
-    };
+    });
 
     let jdk_path = download_progress(
         store.clone(),
@@ -48,7 +146,7 @@ pub async fn prepare_jdk(
         } else {
             Verification::None
         },
-        &jdk_name,
+        jdk_name,
         None::<String>,
     )
     .await
@@ -60,27 +158,21 @@ pub async fn prepare_jdk(
 
     let home_path = match jdk.home_path {
         HomePathType::Custom(p) => p,
-        HomePathType::FirstSubDir => {
-            let dir = match ex_path.read_dir() {
-                Ok(d) => d,
+        HomePathType::Auto => {
+            match find_jdk_home(&ex_path).await {
+                Ok(p) => {
+                    if let Some(p) = p {
+                        info!("Found JDK home: {}", p.to_string_lossy());
+                        p.to_string_lossy().to_string()
+                    } else {
+                        return Err(Error::JdkHomeUndetected);
+                    }
+                }
                 Err(e) => {
-                    error!("Failed to read directory: {e}");
+                    error!("Failed to find JDK home: {}", e);
                     return Err(Error::Filesystem(e));
                 }
-            };
-
-            let mut found_name = None;
-            for e in dir {
-                let e = e.unwrap();
-                let filename = e.file_name();
-                let file_type = e.file_type().unwrap();
-                if file_type.is_dir() {
-                    found_name = Some(filename.into_string().unwrap());
-                    break;
-                }
             }
-            
-            found_name.ok_or(Error::JdkHomeUndetected)?
         }
     };
 

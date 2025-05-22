@@ -8,13 +8,14 @@ use super::{ArchiveFormat, Error};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum HomePathType {
-    FirstSubDir,
+    Auto,
     Custom(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Jdk {
     pub url: String,
+    pub file_name: Option<String>,
     pub sha256: Option<String>,
     #[serde(rename = "home-dir")]
     pub home_path: HomePathType,
@@ -96,12 +97,13 @@ impl JdkLookup {
 
             // Construct the JDK object with information found from Disco
             return Ok(Some(Jdk {
+                file_name: Some(p.filename),
                 format: match p.archive_type.as_str() {
                     "tar.gz" => ArchiveFormat::TarGz,
                     "zip" => ArchiveFormat::Zip,
                     _ => continue,
                 },
-                home_path: HomePathType::FirstSubDir,
+                home_path: HomePathType::Auto,
                 sha256: None,
                 url: download_url.to_string(),
             }));
