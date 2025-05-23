@@ -12,6 +12,7 @@ pub async fn create_jobs(
     var_map: &template::var::VarMap,
     no_verify: bool,
     force_jdk_distribution: Option<String>,
+    preferred_distributions: Option<Vec<String>>,
 ) -> Result<Vec<Job>, Error> {
     let mut jobs = vec![];
 
@@ -50,6 +51,7 @@ pub async fn create_jobs(
                             &version,
                             None,
                             force_jdk_distribution,
+                            preferred_distributions,
                         ).await {
                             Ok(jdk) => jdk,
                             Err(e) => {

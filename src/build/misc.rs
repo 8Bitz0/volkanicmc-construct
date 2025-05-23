@@ -69,6 +69,10 @@ pub async fn download_progress<U: std::fmt::Display, N: std::fmt::Display, A: st
         return Err(DownloadError::DirectoryAlreadyExists(p));
     }
 
+    if verification == Verification::None {
+        warn!("Verification for \"{}\" is unavailable", name);
+    }
+
     // Always re-download if no verification information is provided
     if p.is_file() && verification != Verification::None {
         if verify_hash(p.clone(), &verification).await? {

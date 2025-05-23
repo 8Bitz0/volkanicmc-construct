@@ -1,6 +1,6 @@
 use foojay_disco::{self, PackageQueryOptions};
 use serde::{Deserialize, Serialize};
-use tracing::{info, error};
+use tracing::{debug, error, info};
 
 use crate::hostinfo::{self, Os};
 
@@ -33,6 +33,7 @@ impl JdkLookup {
         version: impl std::fmt::Display,
         override_sys: Option<(hostinfo::Os, hostinfo::Arch)>,
         force_jdk_distribution: Option<String>,
+        preferred_distributions: Option<Vec<String>>,
     ) -> Result<Option<Jdk>, Error> {
         // Get current operating system
         let os = if let Some((os, _)) = override_sys.clone() {
@@ -88,8 +89,18 @@ impl JdkLookup {
             }
         };
 
+        // Sort packages by preferred distributions if specified
+        let mut packages = packages.result;
+        if let Some(preferred) = preferred_distributions {
+            packages.sort_by_key(|p| {
+                preferred.iter()
+                    .position(|d| d == &p.distribution)
+                    .unwrap_or(usize::MAX)
+            });
+        }
+
         // Filter out packages which don't match the correct version
-        for p in packages.result {
+        for p in packages {
             if p.major_version.to_string() != version.to_string() {
                 continue;
             }
@@ -115,11 +126,17 @@ impl JdkLookup {
             }
 
             // Construct doesn't support any verification types other than SHA256
-            let verification = if package_info.checksum_type == "sha256" {
-                Some(package_info.checksum)
+            let mut verification = if package_info.checksum_type == "sha256" {
+                Some(package_info.checksum.clone())
             } else {
                 None
             };
+
+            // In case the JDK still doesn't have a valid checksum
+            if package_info.checksum.len() != 64 {
+                debug!("Empty checksum from JDK");
+                verification = None
+            }
 
             // Construct the JDK object with information found from Disco
             return Ok(Some(Jdk {

@@ -9,6 +9,8 @@ use super::misc::{
     download_progress, extract, get_remote_filename, DownloadError, ExtractionError, Verification,
 };
 
+const DEFAULT_JDK_PKG_NAME: &str = "unknown-jdk-runtime";
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Download error: {0}")]
@@ -130,10 +132,14 @@ pub async fn prepare_jdk(
     jdk: Jdk,
     no_verify: bool,
 ) -> Result<(), Error> {
-    let jdk_name = jdk.file_name.unwrap_or(match get_remote_filename(&jdk.url).await {
+    let mut jdk_name = jdk.file_name.clone().unwrap_or(match get_remote_filename(&jdk.url).await {
         Some(s) => s,
         None => return Err(Error::NoNameForUrl(jdk.url.clone())),
     });
+
+    if jdk_name.is_empty() {
+        jdk_name = DEFAULT_JDK_PKG_NAME.to_string();
+    }
 
     let jdk_path = download_progress(
         store.clone(),
