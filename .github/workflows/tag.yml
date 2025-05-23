@@ -16,11 +16,11 @@ jobs:
     with:
       publish: true
       upload-tag: ${{ github.ref_name }}
-      prerelease: false
+      prerelease: true
   run-docker:
     uses: ./.github/workflows/docker.yml
     secrets: inherit
     with:
       push: true
-      stable: true
+      stable: false
       tag: ${{ github.ref_name }}
