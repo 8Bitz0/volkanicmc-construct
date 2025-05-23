@@ -5,14 +5,16 @@ pub mod conf;
 mod jdk;
 pub mod style;
 
-pub use jdk::{Jdk, JdkConfig};
-
-const JDK_FILE: &str = include_str!("jdk.yml");
+pub use jdk::{HomePathType, Jdk, JdkLookup};
 
 #[derive(Debug, thiserror::Error)]
-pub enum ResourceLoadError {
-    #[error("Failed to parse YAML: {0}")]
-    YamlParse(serde_yaml::Error),
+pub enum Error {
+    #[error("Foojay Disco error: {0}")]
+    FoojayDisco(foojay_disco::Error),
+    #[error("Failed to fetch system architecture")]
+    UnknownArchitecture,
+    #[error("Failed to fetch operating system")]
+    UnknownOperatingSystem,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]

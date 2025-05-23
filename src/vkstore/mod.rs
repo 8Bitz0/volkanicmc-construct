@@ -21,7 +21,6 @@ pub struct VolkanicStore {
     pub build_path: path::PathBuf,
     pub downloads_path: path::PathBuf,
     pub runtime_path: path::PathBuf,
-    // TODO: Create temporary file management
     pub temp_path: path::PathBuf,
 }
 
