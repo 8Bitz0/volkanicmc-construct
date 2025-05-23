@@ -32,6 +32,7 @@ impl JdkLookup {
         &self,
         version: impl std::fmt::Display,
         override_sys: Option<(hostinfo::Os, hostinfo::Arch)>,
+        force_jdk_distribution: Option<String>,
     ) -> Result<Option<Jdk>, Error> {
         // Get current operating system
         let os = if let Some((os, _)) = override_sys.clone() {
@@ -57,6 +58,8 @@ impl JdkLookup {
 
         info!("Fetching JDK packages...");
 
+        let version_str = version.to_string();
+
         // Pull packages from Disco
         let packages = tokio::task::spawn_blocking(move || {
             foojay_disco::pull_packages(option_env!("FOOJAY_DISCO_URL"), Some(PackageQueryOptions {
@@ -65,14 +68,15 @@ impl JdkLookup {
                 archive_type: Some(archive_type),
                 directly_downloadable: Some(true),
                 bitness: None,
-                distribution: None,
+                distribution: force_jdk_distribution,
                 javafx_bundled: None,
-                latest: None,
+                // Make sure on the latest available packages are pulled
+                latest: Some("available".to_string()),
                 libc_type: None,
                 package_type: None,
                 release_status: None,
                 term_of_support: None,
-                version: None,
+                version: Some(version_str),
             }))
         }).await.unwrap();
 
@@ -90,9 +94,31 @@ impl JdkLookup {
                 continue;
             }
 
-            let download_url = match p.links.get("pkg_download_redirect") {
-                Some(u) => u,
-                None => continue,
+            info!("Fetching package info...");
+
+            // Some information like the file checksum is only available via another request
+            let package_info = tokio::task::spawn_blocking(move || {
+                foojay_disco::pull_package_info(option_env!("FOOJAY_DISCO_URL"), p.id)
+            }).await.unwrap();
+
+            let package_info = match package_info {
+                Ok(o) => o.result[0].clone(),
+                Err(e) => {
+                    error!("Failed to fetch package information by ID via Foojay Disco: {e}");
+                    return Err(Error::FoojayDisco(e));
+                }
+            };
+
+            // Each field can be an empty string, so we ignore those and continue on
+            if package_info.direct_download_uri.is_empty() {
+                continue;
+            }
+
+            // Construct doesn't support any verification types other than SHA256
+            let verification = if package_info.checksum_type == "sha256" {
+                Some(package_info.checksum)
+            } else {
+                None
             };
 
             // Construct the JDK object with information found from Disco
@@ -104,8 +130,8 @@ impl JdkLookup {
                     _ => continue,
                 },
                 home_path: HomePathType::Auto,
-                sha256: None,
-                url: download_url.to_string(),
+                sha256: verification,
+                url: package_info.direct_download_uri.to_string(),
             }));
         };
 

@@ -39,6 +39,7 @@ pub async fn build(
     user_vars_raw: Vec<String>,
     additional_jvm_args: Vec<String>,
     prevent_verify: bool,
+    force_jdk_distribution: Option<String>,
 ) -> Result<(), BuildError> {
     let mut user_vars = template::var::EnvMap::new();
 
@@ -78,7 +79,8 @@ pub async fn build(
         &overlays,
         jdk_config,
         &variables,
-        prevent_verify
+        prevent_verify,
+        force_jdk_distribution,
     )
         .await
         .map_err(BuildError::Job)?;

@@ -429,7 +429,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "foojay_disco"
 version = "0.1.0"
-source = "git+https://github.com/8Bitz0/foojay-disco.git?rev=32851e40ec162734ba10d293eb8f5f0c7dc3332d#32851e40ec162734ba10d293eb8f5f0c7dc3332d"
+source = "git+https://github.com/8Bitz0/foojay-disco.git?rev=e1cfb11cf720d39f5e373053e428110bbde84d83#e1cfb11cf720d39f5e373053e428110bbde84d83"
 dependencies = [
  "reqwest",
  "serde",

@@ -49,6 +49,9 @@ enum Command {
         /// Disable verification for all files
         #[arg(long)]
         no_verify: bool,
+        /// Only allows a specific JDK distribution
+        #[arg(long)]
+        force_jdk_distribution: Option<String>,
     },
     /// Parse a template at the given path
     Check { path: path::PathBuf },
@@ -128,6 +131,7 @@ async fn main() {
             additional_jvm_args,
             import_save,
             no_verify,
+            force_jdk_distribution,
         } => {
             init_log().await;
 
@@ -159,6 +163,7 @@ async fn main() {
                 user_vars,
                 additional_jvm_args,
                 no_verify,
+                force_jdk_distribution,
             )
             .await
             {

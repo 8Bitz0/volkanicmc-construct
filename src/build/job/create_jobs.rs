@@ -11,6 +11,7 @@ pub async fn create_jobs(
     jdk_lookup: JdkLookup,
     var_map: &template::var::VarMap,
     no_verify: bool,
+    force_jdk_distribution: Option<String>,
 ) -> Result<Vec<Job>, Error> {
     let mut jobs = vec![];
 
@@ -45,7 +46,11 @@ pub async fn create_jobs(
                 title: "Prepare JDK".into(),
                 action: JobAction::PrepareJdk {
                     jdk: {
-                        let jdk = match jdk_lookup.find(&version, None).await {
+                        let jdk = match jdk_lookup.find(
+                            &version,
+                            None,
+                            force_jdk_distribution,
+                        ).await {
                             Ok(jdk) => jdk,
                             Err(e) => {
                                 error!("Failed to find JDK via Foojay Disco: {e}");
